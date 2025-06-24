@@ -1,6 +1,9 @@
 
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using MyShopProjectBackend.Db;
+using System.Text;
 
 namespace MyShopProjectBackend
 {
@@ -17,6 +20,27 @@ namespace MyShopProjectBackend
             builder.Services.AddOpenApi();
 
             builder.Services.AddDbContext<AppDbConection>(optionsAction => optionsAction.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+            // Зареєструйте AppDbConection як сервіс
+            builder.Services.AddAuthentication(options => 
+            { 
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme; // Стандартна схема аутентифікації
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme; // Схема для виклику викликів аутентифікації
+            })
+
+            .AddJwtBearer(options => 
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+
+                    ValidIssuer = "MyShopProjectBackend",
+                    ValidAudience = "MyShopProjectFron",
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("superSecretKey123456"))
+                };
+            });
 
             var app = builder.Build();
 
@@ -27,7 +51,7 @@ namespace MyShopProjectBackend
             }
 
             app.UseHttpsRedirection();
-
+            app.UseAuthentication(); // Додайте аутентифікацію до конвеєра обробки запитів
             app.UseAuthorization();
 
 

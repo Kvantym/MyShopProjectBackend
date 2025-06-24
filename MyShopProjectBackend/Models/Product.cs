@@ -13,5 +13,11 @@
         public int Quantity { get; set; } // Кількість продукту на складі
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>(); // Колекція замовлень, в яких присутній цей продукт
         public ICollection<ProductReview> productReviews  { get; set; } = new List<ProductReview>(); // Колекція улюблених продуктів, в яких присутній цей продукт
+
+        // 🖼 Зображення у форматі байтів
+        public byte[]? ImageData { get; set; }
+
+        // MIME-тип (наприклад: image/jpeg, image/png)
+        public string? ImageMimeType { get; set; }
     }
 }
