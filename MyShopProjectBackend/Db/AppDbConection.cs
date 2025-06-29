@@ -16,7 +16,9 @@ namespace MyShopProjectBackend.Db
         public DbSet<Shop> shops  { get; set; } // Таблиця магазинів
         public DbSet<ShopOrder> shopOrders  { get; set; } // Таблиця замовлень магазинів
         public DbSet<User> users  { get; set; } // Таблиця користувачів
-
+        public DbSet<Cart> carts { get; set; } // Таблиця кошиків
+        public DbSet<CartItem> cartItems { get; set; } // Таблиця товарів в кошиках
+       
 
     }
 }

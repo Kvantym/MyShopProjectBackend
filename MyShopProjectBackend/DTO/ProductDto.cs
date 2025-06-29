@@ -1,12 +1,13 @@
-﻿namespace MyShopProjectBackend.ViewModels
+﻿namespace MyShopProjectBackend.DTO
 {
-    public class UpdateProductModel
+    public class ProductDto
     {
-        public int ProductId { get; set; }
+        public int Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
-        public decimal Price { get; set; }
         public string Category { get; set; }
+        public decimal Price { get; set; }
+        public int ShopId { get; set; }
         public int Quantity { get; set; }
 
         // 🖼 Зображення у форматі байтів
@@ -14,5 +15,6 @@
 
         // MIME-тип (наприклад: image/jpeg, image/png)
         public string? ImageMimeType { get; set; }
+
     }
 }

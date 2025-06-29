@@ -25,7 +25,7 @@ namespace MyShopProjectBackend.Controllers
             _context = conection;
         }
         // GET: AccountController
-        [HttpGet("Index")]
+        [HttpGet]
         public ActionResult Index()
         {
             return View();
@@ -49,8 +49,9 @@ namespace MyShopProjectBackend.Controllers
 
             var claims = new[]
             {
-                new Claim(ClaimTypes.Name, user.UserName),
-                new Claim(ClaimTypes.Role, user.Role),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.UserName),  // Класифікаційні дані токена
+                new Claim(ClaimTypes.Role, user.Role), // Роль користувача
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("superSecretKey1234567890!@#$%^&*()_+QWERTY")); // Ключ для підпису токена
@@ -65,36 +66,44 @@ namespace MyShopProjectBackend.Controllers
             );
             var tokenString = new JwtSecurityTokenHandler().WriteToken(token); // Генерація токена у форматі рядка
 
-           return Ok(new {token= tokenString} );
+           return Ok(new {token= tokenString, user.Role } );// Повернути статус 200 OK з токеном у форматі рядка
         }
 
         [HttpPost("RegisterCustomer")]
         public async Task<IActionResult> RegisterCustomer([FromBody] LoginModel loginMode)
         {
-            if (!ModelState.IsValid)// Перевірка моделі на валідність
+           return await RegisterUser(loginMode, UserRole.Customer); // Виклик методу для реєстрації покупця
+        }
+        [HttpPost("RegisterSeller")]
+        public async Task<IActionResult> RegisterSeller([FromBody] LoginModel loginMode)
+        {
+           return await RegisterUser(loginMode, UserRole.Seller); // Виклик методу для реєстрації продавця
+        }
+
+        private async Task<IActionResult> RegisterUser(LoginModel loginModel, string role)
+        {
+            if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);// Перевірка моделі на валідність
+                return BadRequest(ModelState);
             }
-           
-            
-            var existingUser = await _context.users.FirstOrDefaultAsync(u => u.UserName == loginMode.Username || u.Email == loginMode.Email);// Перевірка наявності користувача з таким ім'ям або email
-            if (existingUser != null) { 
-             return BadRequest("User with this username or email already exists."); // Повернути статус 400 Bad Request, якщо користувач з таким ім'ям або email вже існує
-            }
-            var newUser = new User // Створення нового користувача
+
+            var existingUser = await _context.users.FirstOrDefaultAsync(u => u.UserName == loginModel.Username || u.Email == loginModel.Email);
+            if (existingUser != null)
             {
-                UserName = loginMode.Username,
-                Password = loginMode.Password,
-                Email = loginMode.Email,
-                Role = UserRole.Customer // Встановлення ролі користувача
+                return BadRequest("User with this username or email already exists.");
+            }
+            var newUser = new User
+            {
+                UserName = loginModel.Username,
+                Password = loginModel.Password,
+                Email = loginModel.Email,
+                Role = role
             };
 
-            await _context.users.AddAsync(newUser); // Додавання нового користувача до бази даних
-            await _context.SaveChangesAsync(); // Збереження змін у базі даних
+            await _context.users.AddAsync(newUser);
+            await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Користувача успішно зареєстровано" }); // Повернути статус 200 OK з порожнім об'єктом
-
-
+            return Ok(new { message = "Користувача успішно зареєстровано", userId = newUser.Id });
         }
 
         [HttpPost("Logout")]

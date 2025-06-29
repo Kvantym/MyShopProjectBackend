@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MyShopProjectBackend.Db;
+using System.Security.Claims;
 using System.Text;
 
 namespace MyShopProjectBackend
@@ -39,9 +40,14 @@ namespace MyShopProjectBackend
 
                     ValidIssuer = "MyShopProjectBackend",
                     ValidAudience = "MyShopProjectFron",
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("superSecretKey1234567890!@#$%^&*()_+QWERTY"))
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("superSecretKey1234567890!@#$%^&*()_+QWERTY")),
+
+                     RoleClaimType = ClaimTypes.Role,  
+                    NameClaimType = ClaimTypes.NameIdentifier
                 };
             });
+
+           
 
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(); // Додайте Swagger для документації API

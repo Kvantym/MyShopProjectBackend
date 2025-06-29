@@ -1,4 +1,6 @@
-﻿namespace MyShopProjectBackend.Models
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace MyShopProjectBackend.Models
 {
     public class Shop
     {
@@ -6,7 +8,8 @@
         
         public string Name { get; set; } = string.Empty; // Назва магазину
         public string Description { get; set; } = string.Empty; // Опис магазину
-        public string OwnerId { get; set; } = string.Empty; // Ідентифікатор власника магазину (користувача)
+        public int OwnerId { get; set; } // Ідентифікатор власника магазину (користувача)
+        [ForeignKey("OwnerId")]
         public User User { get; set; }  // Власник магазину (користувач)
 
         public ICollection<Product> Products { get; set; } = new List<Product>(); // Колекція продуктів, які продаються в магазині
