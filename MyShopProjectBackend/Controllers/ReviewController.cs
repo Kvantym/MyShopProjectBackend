@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyShopProjectBackend.Db;
+using MyShopProjectBackend.Servises.Interface;
 using MyShopProjectBackend.ViewModels;
 using System.Security.Claims;
 
@@ -13,10 +14,12 @@ namespace MyShopProjectBackend.Controllers
     public class ReviewController : Controller
     {
         private readonly AppDbConection _context;
+        private readonly IReviewServise _reviewServise;
 
-        public ReviewController(AppDbConection conection)
+        public ReviewController(AppDbConection conection, IReviewServise reviewServise)
         {
             _context = conection;
+            _reviewServise = reviewServise;
         }
 
         [HttpGet]
@@ -32,125 +35,74 @@ namespace MyShopProjectBackend.Controllers
             {
                 return BadRequest(ModelState);
             }
-
-
             var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdStr))
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int userId))
             {
                 return Unauthorized("Користувач не авторизований");
-            }    
-
-            int userId = int.Parse(userIdStr);
-
-            var product = await _context.products.FindAsync(model.ProductId);
-            if (product == null)
-            {
-                return BadRequest("Товар не знайдено");
             }
+            model.UserId = userId;
 
-            var review = new Models.ProductReview
+            var result = await _reviewServise.AddReviewAsync(model);
+            if (!result.Success)
             {
-                ProductId = model.ProductId,
-                UserId = userId,
-                Rating = model.Rating,
-                ReviewText = model.Content,
-            };
-
-            _context.productReviews.Add(review);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Відгук успішно відредаговано" });
+                return BadRequest(result.ErrorMessage);
+            }
+            return Ok(new { message = "Відгук успішно додано" });
 
         }
         [Authorize]
         [HttpPost("UpdateReview")]
         public async Task<IActionResult> UpdateReview([FromBody] UpdateReviewModel model)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdStr))
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int userId))
             {
                 return Unauthorized("Користувач не авторизований");
             }
+            model.UserId = userId;
 
-            int userId = int.Parse(userIdStr);
-
-            var user = await _context.users.FindAsync(userId);
-            if (user == null)
+             var result = await _reviewServise.UpdateReviewAsync(model);
+            if (!result.Success)
             {
-                return NotFound("Користувача не знайдено");
+                return BadRequest(result.ErrorMessage);
             }
-
-            var review = await _context.productReviews.FindAsync(model.ReviewId);
-            if (review == null)
-            {
-                return NotFound("Відгук не знайдено");
-            }
-             if (review.UserId != userId)
-            {
-                return Forbid("Ви не маєте права редагувати цей відгук");
-            }
-
-             review.Rating = model.Rating;
-             review.ReviewText = model.Content;
-             await _context.SaveChangesAsync();
-
             return Ok(new { message = "Відгук успішно відредаговано" });
 
         }
         [Authorize]
         [HttpPost("DeleteReview")]
-        public async Task<IActionResult> DeleteReview(int reviewId)
+        public async Task<IActionResult> DeleteReview(DeleteReviewModel model)
         {
             var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdStr))
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int userId))
             {
                 return Unauthorized("Користувач не авторизований");
             }
+            model.UserId = userId;
 
-            int userId = int.Parse(userIdStr); 
-
-            var user = await _context.users.FindAsync(userId);
-            if (user == null)
+           var result = await _reviewServise.DeleteReviewAsync(model);
+            if (!result.Success)
             {
-                return NotFound("Користувача не знайдено");
+                return BadRequest(result.ErrorMessage);
             }
 
-            var review = await _context.productReviews.FindAsync(reviewId);
-            if (review == null)
-            {
-                return NotFound("Відгук не знайдено");
-            }
-
-            if(review.UserId != userId)
-            {
-                return Forbid("Ви не маєте права видаляти цей відгук");
-            }
-
-            _context.productReviews.Remove(review);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Відгук успішно відредаговано" });
-
+            return Ok(new { message = "Відгук успішно видалено" });
         }
 
         [HttpGet("GetReviewsByProduct")]
         public async Task<IActionResult> GetReviewsByProduct(int productId)
         {
-            var product = await _context.products.FindAsync(productId);
-            if (product == null)
+            
+            var result = await _reviewServise.GetReviewsByProductAsync(productId);
+            if (!result.Success)
             {
-                return NotFound("Товар не знайдено");
+                return BadRequest(result.ErrorMessage);
             }
-
-            var reviews = await _context.productReviews.Where(r=> r.ProductId == productId).Select(r=> new
-            {
-                r.Id,
-                r.Rating,
-                r.ReviewText,
-                UserName = _context.users.Where(u => u.Id == r.UserId).Select(u => u.UserName).FirstOrDefault(),
-                CreatedAt = r.CreatedAt
-            }).ToListAsync();
-            return Ok(reviews);
+            return Ok(result.Reviews);
         }
 
     }
