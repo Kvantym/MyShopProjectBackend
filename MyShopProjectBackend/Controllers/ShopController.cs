@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyShopProjectBackend.Db;
+using MyShopProjectBackend.Servises.Interface;
 using MyShopProjectBackend.ViewModels;
 using System.Security.Claims;
 
@@ -13,10 +14,12 @@ namespace MyShopProjectBackend.Controllers
     public class ShopController : Controller
     {
         private readonly AppDbConection _context;
+        private readonly IShopServise _shopServise;
 
-        public ShopController(AppDbConection conection)
+        public ShopController(AppDbConection conection, IShopServise shopServise)
         {
             _context = conection;
+            _shopServise = shopServise;
         }
 
         [HttpGet]
@@ -24,7 +27,7 @@ namespace MyShopProjectBackend.Controllers
         {
             return View();
         }
-        [Authorize (Roles ="Seller")]
+        [Authorize(Roles = "Seller")]
         [HttpPost("CreateShop")]
         public async Task<IActionResult> CreateShop([FromBody] CreateShopModel model)
         {
@@ -33,41 +36,23 @@ namespace MyShopProjectBackend.Controllers
                 return BadRequest(ModelState);
             }
 
-            var userIdString = User.Identity?.Name;
-            if (!int.TryParse(userIdString, out int userId))
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier); // Отримання ідентифікатора користувача з токена
+            if (userIdClaim == null)
             {
-                // Додаткова перевірка клейм
-                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
-                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out userId))
-                {
-                    return Unauthorized("Invalid user identity");
-                }
+                return Unauthorized("User ID claim not found");
             }
-
-
-            var user = await _context.users.FindAsync(userId);
-            if (user == null)
+            if (!int.TryParse(userIdClaim.Value, out int userId))
             {
-                return NotFound("User not found");
+                return BadRequest("Invalid user ID");
             }
+            model.OwnerId = userId; // Додаємо ідентифікатор власника до моделі
 
-            if (user.Role != "Seller")
+            var result = await _shopServise.CreateShopAsync(model); // Виклик методу для створення магазину
+            if (!result.Success)
             {
-                return StatusCode(StatusCodes.Status403Forbidden, "Only sellers can create shops");
+                return BadRequest(result.ErrorMessage); // Повернення помилки, якщо створення не вдалось
             }
-
-            var shop = new Models.Shop
-            {
-                Name = model.Name,
-                Description = model.Description,
-                OwnerId = user.Id
-
-            };
-            await _context.shops.AddAsync(shop);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Магазин успішно створено", shopId = shop.Id });
-
+            return Ok(new { message = "Магазин успішно створений" });
         }
         [Authorize(Roles = "Seller")]
         [HttpPost("UpdateShop")]
@@ -79,23 +64,13 @@ namespace MyShopProjectBackend.Controllers
             {
                 return Unauthorized("Invalid user identity");
             }
+            model.OwnerId = userId; // Додаємо ідентифікатор власника до моделі
 
-            var shop = await _context.shops.FindAsync(model.ShopId);
-
-            if(shop == null)
+            var result = await _shopServise.UpdateShopAsync(model); // Виклик методу для оновлення магазину
+            if (!result.Success)
             {
-                return NotFound("Магазин не знайдено");
+                return BadRequest(result.ErrorMessage); // Повернення помилки, якщо оновлення не вдалось
             }
-
-            if(shop.OwnerId != userId)
-            {
-                return Forbid("Ви не маєте прав змінювати цей магазин");
-            }
-
-            shop.Name = model.Name;
-            shop.Description = model.Description;
-
-            await _context.SaveChangesAsync();
 
             return Ok(new { message = "Магазин успішно оновлено" });
         }
@@ -103,45 +78,39 @@ namespace MyShopProjectBackend.Controllers
 
         [Authorize(Roles = "Seller")]
         [HttpPost("DeleteShop")]
-        public async Task<IActionResult> DeleteShop(int shopId)
+        public async Task<IActionResult> DeleteShop(DeleteShopModel model)
         {
-            var userIdClime = User.Claims.FirstOrDefault(c=> c.Type == ClaimTypes.NameIdentifier);
+            var userIdClime = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
 
-            if (userIdClime == null || !int.TryParse(userIdClime.Value, out int userId)) 
+            if (userIdClime == null || !int.TryParse(userIdClime.Value, out int userId))
             {
                 return Unauthorized("Invalid user identity");
             }
+            model.OwnerId = userId; // Додаємо ідентифікатор власника до моделі
 
-            var shop = await _context.shops.FindAsync(shopId);
-            if (shop == null) { 
-            return NotFound();
+            var result = await _shopServise.DeleteShopAsync(model); // Виклик методу для видалення магазину
+            if (!result.Success)
+            {
+                return BadRequest(result.ErrorMessage); // Повернення помилки, якщо видалення не вдалось
             }
 
-            if (shop.OwnerId != userId) {
-                return Forbid("You do not have permission to delete this shop");
-            }
+            return Ok(new { message = "Магазин успішно видалено" });
 
-           _context.shops.Remove(shop);
-            await _context.SaveChangesAsync();
-
-            return Ok(new {massage = "Магазин успішно видалено" });
         }
 
         [HttpGet("GetShopById")]
         public async Task<IActionResult> GetShopById(int shopId)
         {
-           var shop = await _context.shops.FindAsync(shopId);
-
-            if (shop == null)
+            var result = await _shopServise.GetShopByIdAsync(shopId); // Виклик методу для отримання магазину за ідентифікатором
+            if (!result.Success)
             {
-                return NotFound("Магазин не знайдено");
+                return BadRequest(result.ErrorMessage); // Повернення помилки, якщо отримання не вдалось
             }
-
-            return Ok(shop);
+            return Ok(result.Shop);
         }
         [Authorize(Roles = "Seller")]
         [HttpGet("GetAllShops")]
-        public async Task<IActionResult> GetAllShops(int ownerId)
+        public async Task<IActionResult> GetAllShops()
         {
             var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
@@ -149,9 +118,13 @@ namespace MyShopProjectBackend.Controllers
                 return Unauthorized("Invalid user identity");
             }
 
-            var shops = await _context.shops.Where(s => s.OwnerId == ownerId).ToListAsync();
+            var result = await _shopServise.GetAllShopsAsync(userId); // Виклик методу для отримання всіх магазинів
+            if (!result.Success)
+            {
+                return BadRequest(result.ErrorMessage); // Повернення помилки, якщо отримання не вдалось
+            }
 
-            return Ok(shops);
+            return Ok(result.Shops);
         }
 
 

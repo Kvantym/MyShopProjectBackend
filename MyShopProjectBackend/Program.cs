@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MyShopProjectBackend.Db;
+using MyShopProjectBackend.Servises;
+using MyShopProjectBackend.Servises.Interface;
 using System.Security.Claims;
 using System.Text;
 
@@ -47,7 +49,18 @@ namespace MyShopProjectBackend
                 };
             });
 
-           
+
+            builder.Services.AddScoped<IAccountService, AccountServise>();
+            builder.Services.AddScoped<ICartServises, CartServises>();
+            builder.Services.AddScoped<IFavoriteServises, FavoriteServises>();
+            builder.Services.AddScoped<IOrderServises, OrderServises>();
+            builder.Services.AddScoped<IProductServises, ProductServises>();
+            builder.Services.AddScoped<IReviewServise, ReviewServise>();
+            builder.Services.AddScoped<IUserServise, UserServise>();
+            builder.Services.AddScoped<IShopServise, ShopServise>();
+            builder.Services.AddScoped<IUserServise, UserServise>(); 
+
+
 
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(); // Додайте Swagger для документації API
