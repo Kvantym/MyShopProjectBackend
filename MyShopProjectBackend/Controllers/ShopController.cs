@@ -1,8 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using MyShopProjectBackend.Db;
 using MyShopProjectBackend.Servises.Interface;
 using MyShopProjectBackend.ViewModels;
 using System.Security.Claims;
@@ -11,21 +8,19 @@ namespace MyShopProjectBackend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ShopController : Controller
+    public class ShopController : ControllerBase
     {
-        private readonly AppDbConection _context;
         private readonly IShopServise _shopServise;
 
-        public ShopController(AppDbConection conection, IShopServise shopServise)
+        public ShopController(IShopServise shopServise)
         {
-            _context = conection;
             _shopServise = shopServise;
         }
 
         [HttpGet]
         public ActionResult Index()
         {
-            return View();
+        return Ok("Shop Controller is working");
         }
         [Authorize(Roles = "Seller")]
         [HttpPost("CreateShop")]

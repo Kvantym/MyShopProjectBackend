@@ -1,27 +1,23 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using MyShopProjectBackend.Models;
 using MyShopProjectBackend.Servises.Interface;
 using MyShopProjectBackend.ViewModels;
-using System.Security.Claims;
 
 namespace MyShopProjectBackend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class AccountController : Controller
+    public class AccountController : ControllerBase
     {
         private readonly IAccountService _accountService;
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly RoleManager<IdentityRole> _roleManager;
 
-        public AccountController(IAccountService accountService, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
+
+        public AccountController(IAccountService accountService)
         {
             _accountService = accountService;
-            _userManager = userManager;
-            _roleManager = roleManager;
+
         }
 
         [HttpGet("Get")]

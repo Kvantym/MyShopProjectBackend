@@ -30,7 +30,7 @@ namespace MyShopProjectBackend.Servises
                 return (false, "Товар вже додано до обраного");
             }
 
-            var favoritProduct = new FavoritProduct
+            var favoritProduct = new FavouriteProduct
             {
                 UserId = model.UserId,
                 ProductId = model.ProductId,
@@ -42,13 +42,13 @@ namespace MyShopProjectBackend.Servises
             return (true,null);
         }
 
-        public async Task<(bool Success, string? ErrorMessage, List<FavoritProduct> FavoriteProducts)> GetFavoritesAsync(int userId)
+        public async Task<(bool Success, string? ErrorMessage, List<FavouriteProduct> FavoriteProducts)> GetFavoritesAsync(int userId)
         {
             var favoritProducts = await _context.favoritProducts.Include(fp => fp.Product).Where(fp => fp.UserId == userId).ToListAsync();
 
             if (!favoritProducts.Any())
             {
-                return (false, "Немає улюблених продуктів", new List<FavoritProduct>());
+                return (false, "Немає улюблених продуктів", new List<FavouriteProduct>());
             }
             return (true, null, favoritProducts);
         }

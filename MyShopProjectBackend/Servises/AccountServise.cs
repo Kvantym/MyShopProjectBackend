@@ -1,15 +1,12 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using MyShopProjectBackend.DTO;
 using MyShopProjectBackend.Models;
 using MyShopProjectBackend.Servises.Interface;
 using MyShopProjectBackend.ViewModels;
-using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace MyShopProjectBackend.Servises
 {
@@ -47,6 +44,7 @@ namespace MyShopProjectBackend.Servises
 
         public async Task<(bool Success, string? token, string? ErrorMessage)> LoginAsync(LoginModel loginModel)
         {
+            var jwtSettings = _configuration.GetSection("JwtSettings");
 
             var user = await _userManager.FindByNameAsync(loginModel.Username);
             if (user == null) {
@@ -70,16 +68,20 @@ namespace MyShopProjectBackend.Servises
                 claims.Add(new Claim(ClaimTypes.Role, role));
             }
 
+            var secretKey = jwtSettings.GetValue<string>("SecretKey");
+            var issuer = jwtSettings.GetValue<string>("Issuer");
+            var audience = jwtSettings.GetValue<string>("Audience");
+
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes("superSecretKey1234567890!@#$%^&*()_+QWERTY");
+            var key = Encoding.ASCII.GetBytes(secretKey);
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.UtcNow.AddHours(1),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
 
-                Issuer = "MyShopProjectBackend",   
-                Audience = "MyShopProjectFron"      
+                Issuer = issuer,   
+                Audience = audience
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);
             var tokenString = tokenHandler.WriteToken(token);

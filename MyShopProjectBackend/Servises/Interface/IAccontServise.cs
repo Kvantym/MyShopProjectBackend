@@ -1,5 +1,4 @@
 ﻿using MyShopProjectBackend.DTO;
-using MyShopProjectBackend.Models;
 using MyShopProjectBackend.ViewModels;
 
 namespace MyShopProjectBackend.Servises.Interface

@@ -1,9 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using MyShopProjectBackend.Db;
-using MyShopProjectBackend.Models;
 using MyShopProjectBackend.Servises.Interface;
 using MyShopProjectBackend.ViewModels;
 
@@ -11,14 +7,12 @@ namespace MyShopProjectBackend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class FavoritesController : Controller
+    public class FavoritesController : ControllerBase
     {
-        private readonly AppDbConection _context;
         private readonly IFavoriteServises _favoriteServises;
 
-        public FavoritesController(AppDbConection conection, IFavoriteServises favoriteServises)
+        public FavoritesController(IFavoriteServises favoriteServises)
         {
-            _context = conection;
             _favoriteServises = favoriteServises;
         }
 
@@ -26,7 +20,7 @@ namespace MyShopProjectBackend.Controllers
         [HttpGet]
         public ActionResult Index()
         {
-            return Ok();
+            return Ok("FavoritesController Working");
         }
         [Authorize]
         [HttpPost("AddToFavorites")]

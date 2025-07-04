@@ -1,9 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using MyShopProjectBackend.Db;
-using MyShopProjectBackend.Models;
 using MyShopProjectBackend.Servises.Interface;
 using MyShopProjectBackend.ViewModels;
 using System.Security.Claims;
@@ -12,21 +8,19 @@ namespace MyShopProjectBackend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class UserController : Controller
+    public class UserController : ControllerBase
     {
-        private readonly AppDbConection _context;
         private readonly IUserServise _userServise;
 
-        public UserController(AppDbConection conection, IUserServise userServise)
+        public UserController(IUserServise userServise)
         {
-            _context = conection;
             _userServise = userServise;
         }
 
         [HttpGet]
         public ActionResult Index()
         {
-            return View();
+            return Ok("User Controller is working");
         }
 
         [HttpGet("GetUserById")]

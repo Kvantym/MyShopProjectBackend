@@ -5,7 +5,6 @@ using MyShopProjectBackend.DTO;
 using MyShopProjectBackend.Models;
 using MyShopProjectBackend.Servises.Interface;
 using MyShopProjectBackend.ViewModels;
-using System.Linq;
 
 namespace MyShopProjectBackend.Servises
 {

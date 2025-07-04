@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using MyShopProjectBackend.Models;
 
@@ -11,7 +10,7 @@ namespace MyShopProjectBackend.Db
         {
         }
         public DbSet<Product> products { get; set; } // Таблиця продуктів
-        public DbSet<FavoritProduct> favoritProducts  { get; set; }  // Таблиця улюблених продуктів
+        public DbSet<FavouriteProduct> favoritProducts  { get; set; }  // Таблиця улюблених продуктів
         public DbSet<Order> orders  { get; set; } // Таблиця замовлень
         public DbSet<OrderItem> orderItems  { get; set; } // Таблиця товарів в замовленнях
         public DbSet<ProductReview> productReviews  { get; set; } // Таблиця відгуків на продукти

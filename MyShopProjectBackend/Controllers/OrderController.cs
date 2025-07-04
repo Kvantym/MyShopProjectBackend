@@ -1,11 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
-using MyShopProjectBackend.Db;
-using MyShopProjectBackend.DTO;
-using MyShopProjectBackend.Models;
 using MyShopProjectBackend.Servises.Interface;
 using MyShopProjectBackend.ViewModels;
 
@@ -13,14 +7,12 @@ namespace MyShopProjectBackend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class OrderController : Controller
+    public class OrderController : ControllerBase
     {
-        private readonly AppDbConection _context;
         private readonly IOrderServises _orderServises;
 
-        public OrderController(AppDbConection conection, IOrderServises orderServises)
+        public OrderController(IOrderServises orderServises)
         {
-            _context = conection;
             _orderServises = orderServises;
         }
 
@@ -28,7 +20,7 @@ namespace MyShopProjectBackend.Controllers
         [HttpGet]
         public ActionResult Index()
         {
-            return View();
+          return Ok("Order Controller is working");
         }
 
         [Authorize(Roles = "Seller")]

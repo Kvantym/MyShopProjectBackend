@@ -8,6 +8,6 @@ namespace MyShopProjectBackend.Models
 
         public ICollection<Shop> Shops { get; set; } = new List<Shop>();
         public ICollection<Order> Orders { get; set; } = new List<Order>();
-        public ICollection<FavoritProduct> FavoritProducts { get; set; } = new List<FavoritProduct>();
+        public ICollection<FavouriteProduct> FavoritProducts { get; set; } = new List<FavouriteProduct>();
     }
 }

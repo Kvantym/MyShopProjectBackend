@@ -1,10 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using MyShopProjectBackend.Db;
-using MyShopProjectBackend.DTO;
-using MyShopProjectBackend.Models;
 using MyShopProjectBackend.Servises.Interface;
 using MyShopProjectBackend.ViewModels;
 using System.Security.Claims;
@@ -13,20 +8,18 @@ namespace MyShopProjectBackend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ProductController : Controller
+    public class ProductController : ControllerBase
     {
-        private readonly AppDbConection _context;
         private readonly IProductServises _productServises;
-        public ProductController(AppDbConection conection, IProductServises productServises)
-        {
-            _context = conection;
+        public ProductController(IProductServises productServises)
+        {;
             _productServises = productServises;
         }
 
         [HttpGet]
         public ActionResult Index()
         {
-            return View();
+            return Ok("Product Controller is working");
         }
         [Authorize(Roles = "Seller")]
         [HttpPost("AddProduct")]

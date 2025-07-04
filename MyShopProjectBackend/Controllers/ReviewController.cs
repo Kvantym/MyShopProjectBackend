@@ -1,8 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using MyShopProjectBackend.Db;
 using MyShopProjectBackend.Servises.Interface;
 using MyShopProjectBackend.ViewModels;
 using System.Security.Claims;
@@ -13,19 +10,17 @@ namespace MyShopProjectBackend.Controllers
     [Route("api/[controller]")]
     public class ReviewController : Controller
     {
-        private readonly AppDbConection _context;
         private readonly IReviewServise _reviewServise;
 
-        public ReviewController(AppDbConection conection, IReviewServise reviewServise)
+        public ReviewController(IReviewServise reviewServise)
         {
-            _context = conection;
             _reviewServise = reviewServise;
         }
 
         [HttpGet]
         public ActionResult Index()
         {
-            return View();
+           return Ok("Review Controller is working");
         }
         [Authorize]
         [HttpPost("AddReview")]

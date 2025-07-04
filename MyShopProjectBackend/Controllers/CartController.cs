@@ -1,9 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using MyShopProjectBackend.Db;
-using MyShopProjectBackend.Models;
 using MyShopProjectBackend.Servises.Interface;
 using MyShopProjectBackend.ViewModels;
 using System.Security.Claims;
@@ -13,20 +9,18 @@ namespace MyShopProjectBackend.Controllers
 
     [ApiController]
     [Route("api/[controller]")]
-    public class CartController : Controller
+    public class CartController : ControllerBase
     {
 
-        private readonly AppDbConection _context;
         private readonly ICartServises _cartServises;
         // GET: CartController
         [HttpGet]
         public ActionResult Index()
         {
-            return View();
+           return Ok("Cart Controller is working");
         }
-        public CartController(AppDbConection conection, ICartServises cartServises)
+        public CartController(ICartServises cartServises)
         {
-            _context = conection;
             _cartServises = cartServises;
         }
         [Authorize]

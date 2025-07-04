@@ -1,7 +1,7 @@
 ﻿namespace MyShopProjectBackend.Models
 {
-    public class FavoritProduct
-    {
+    public class FavouriteProduct
+	{
         public int Id { get; set; } // Ідентифікатор улюбленого продукту
         public int UserId { get; set; } // Ідентифікатор користувача, який додав продукт до улюблених
       //  public User User { get; set; } // Користувач, який додав продукт до улюблених
