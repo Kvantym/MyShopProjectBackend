@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using MyShopProjectBackend.Db;
 using MyShopProjectBackend.DTO;
 using MyShopProjectBackend.Models;
@@ -10,15 +11,17 @@ namespace MyShopProjectBackend.Servises
     public class CartServises : ICartServises
     {
         private readonly AppDbConection _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public CartServises(AppDbConection context)
+        public CartServises(AppDbConection context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         public async Task<(bool Success, string? ErrorMessage)> AddToCartAsync(AddToCartModel model)
         {
-            var user = await _context.users.FindAsync(model.UserId);
+            var user = await _userManager.FindByIdAsync(model.UserId.ToString());
             if (user == null)
             {
                 return (false, "Користувача не знайдено");
@@ -68,7 +71,8 @@ namespace MyShopProjectBackend.Servises
 
         public async Task<(bool Success, string? ErrorMessage)> CheckoutAsync(int userId)
         {
-            var user = await _context.users.FindAsync(userId);
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+
             if (user == null)
             {
                 return (false, "Користувач не знайдений");
@@ -131,7 +135,7 @@ namespace MyShopProjectBackend.Servises
 
         public async Task<(bool Success, string? ErrorMessage)> ClearCartAsync(int userId)
         {
-            var user = await _context.users.FindAsync(userId);
+            var user = await _userManager.FindByIdAsync(userId.ToString());
             if (user == null)
             {
                 return (false, "Користувач не знайдений");
@@ -149,7 +153,7 @@ namespace MyShopProjectBackend.Servises
 
         public async Task<(bool Success, string? ErrorMessage, CartDto? CartDto)> GetCartAsync(int userId)
         {
-            var user = await _context.users.FindAsync(userId);// Отримуємо користувача за ID
+            var user = await _userManager.FindByIdAsync(userId.ToString());// Отримуємо користувача за ID
                                                               // Якщо користувач не знайдений, повертаємо 404 Not Found
             if (user == null)
             {
@@ -187,7 +191,7 @@ namespace MyShopProjectBackend.Servises
 
         public async Task<(bool Success, string? ErrorMessage)> RemoveFromCartAsync(RemoveCartModel model)
         {
-            var user = await _context.users.FindAsync(model.UserId);
+            var user = await _userManager.FindByIdAsync(model.UserId.ToString());
             if (user == null)
             {
                 return (false,"Користувач не знайдений");
@@ -220,7 +224,7 @@ namespace MyShopProjectBackend.Servises
 
         public async Task<(bool Success, string? ErrorMessage)> UpdateCartAsync(UpdateCartModel model)
         {
-            var user = await _context.users.FindAsync(model.UserId);
+            var user = await _userManager.FindByIdAsync(model.UserId.ToString());
             if (user == null)
             {
                 return (false, "Користувача не знайдено");

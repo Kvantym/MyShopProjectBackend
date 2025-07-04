@@ -1,97 +1,117 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using MyShopProjectBackend.Db;
 using MyShopProjectBackend.DTO;
 using MyShopProjectBackend.Models;
 using MyShopProjectBackend.Servises.Interface;
 using MyShopProjectBackend.ViewModels;
+using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace MyShopProjectBackend.Servises
 {
     public class AccountServise : IAccountService
     {
-        private readonly AppDbConection _context;
-        private readonly IConfiguration _configuration; // Додано для доступу до конфігурації, якщо потрібно
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IConfiguration _configuration;
+        private readonly SignInManager<ApplicationUser> _signInManager;
 
-        public AccountServise(AppDbConection conection, IConfiguration configuration)
+        public AccountServise(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IConfiguration configuration)
         {
-            _context = conection;
-            _configuration = configuration; // Зберігаємо конфігурацію для подальшого використання
-
+            _userManager = userManager;
+            _signInManager = signInManager;
+            _configuration = configuration;
         }
 
-        public async Task<(bool Success, string? ErrorMessage, UserDto? userDto)> GetCurrentUserAsync(int userId)
+        public async Task<(bool Success, string? ErrorMessage, UserDto? userDto)> GetCurrentUserAsync()
         {
-            var user = await _context.users.FindAsync(userId);
-
-            if (user == null)
-            {
-                return (false, "Користувача не знайдено", null);
+            var user = await _userManager.GetUserAsync(_signInManager.Context.User);
+            if (user == null) {
+                return (false, "Користувач не знайдений", null);
             }
-
+           
             var userDto = new UserDto
             {
-                Id = user.Id,
+               
                 UserName = user.UserName,
                 Email = user.Email,
-                Role = user.Role
+                Role = (await _userManager.GetRolesAsync(user)).FirstOrDefault()?? "Немає ролі",
             };
-            return (true, null, userDto); // Повернути статус успіху та DTO користувача
+
+            return (true, null, userDto);
         }
+
 
         public async Task<(bool Success, string? token, string? ErrorMessage)> LoginAsync(LoginModel loginModel)
         {
-           var user = await _context.users.FirstOrDefaultAsync(u => u.UserName == loginModel.Username && u.Password == loginModel.Password);
-            if (user == null)
-            {
-                return (false,null, "Неправельний логін чи пароль");
+
+            var user = await _userManager.FindByNameAsync(loginModel.Username);
+            if (user == null) {
+                return (false, null, "Користувача не знайдено");
             }
-           
-            var claims = new[]
+            var passwordValid = await _userManager.CheckPasswordAsync(user, loginModel.Password);
+            if (!passwordValid)
+            { 
+                return (false, null, "Невірний пароль");
+            }
+
+            var roles = await _userManager.GetRolesAsync(user);
+            
+            var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.UserName),  // Класифікаційні дані токена
-                new Claim(ClaimTypes.Role, user.Role), // Роль користувача
+                new Claim(ClaimTypes.NameIdentifier, user.Id), 
+                new Claim(ClaimTypes.Name, user.UserName)
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("superSecretKey1234567890!@#$%^&*()_+QWERTY")); // Ключ для підпису токена
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256); // Створення об'єкта підпису токена
+            foreach (var role in roles) {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
 
-            var token = new JwtSecurityToken(
-                issuer: "MyShopProjectBackend", // Видавець токена
-                audience: "MyShopProjectFron", // Аудиторія токена
-                claims: claims, // Класифікаційні дані токена
-                expires: DateTime.Now.AddMinutes(30), // Термін дії токена
-                signingCredentials: creds // Підпис токена
-            );
-            var tokenString = new JwtSecurityTokenHandler().WriteToken(token); // Генерація токена у форматі рядка
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes("superSecretKey1234567890!@#$%^&*()_+QWERTY");
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.UtcNow.AddHours(1),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
 
-            return (true, tokenString,null); // Повернути статус успіху та токен у форматі рядка
+                Issuer = "MyShopProjectBackend",   
+                Audience = "MyShopProjectFron"      
+            };
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            var tokenString = tokenHandler.WriteToken(token);
 
+            return (true, tokenString, null);
         }
 
-        public async Task<(bool Success, string? ErrorMessage, int? UserId)> RegisterUserAsync(LoginModel loginModel, string role)
+
+        public async Task<(bool Success, string? ErrorMessage)> RegisterUserAsync(RegisterUserModel model, string role)
         {
-            var existingUser = await _context.users.FirstOrDefaultAsync(u => u.UserName == loginModel.Username || u.Email == loginModel.Email);
-            if (existingUser != null)
-            {
-                return (false, "Користувач з таким імям або емайлом існує", null);
+            var user = await _userManager.FindByNameAsync(model.Username);
+            if (user != null) {
+                return (false, "Користувач з таким іменем вже існує");
             }
-            var newUser = new User
+            user = new ApplicationUser
             {
-                UserName = loginModel.Username,
-                Password = loginModel.Password,
-                Email = loginModel.Email,
-                Role = role
+                UserName = model.Username,
+                Email = model.Email
+                
             };
 
-            await _context.users.AddAsync(newUser);
-            await _context.SaveChangesAsync();
-            return (true, null, newUser.Id); // Повернути статус успіху та ідентифікатор нового користувача
+            var result = await _userManager.CreateAsync(user, model.Password);
+            if (!result.Succeeded) {
+                return (false, string.Join(", ", result.Errors.Select(e => e.Description)));
+            }
+
+            var roleResult = await _userManager.AddToRoleAsync(user, role);
+            if (!roleResult.Succeeded) {
+                return (false, string.Join(", ", roleResult.Errors.Select(e => e.Description)));
+            }
+            return (true, null);
         }
+
     }
 }

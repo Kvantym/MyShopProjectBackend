@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using MyShopProjectBackend.Db;
 using MyShopProjectBackend.DTO;
 using MyShopProjectBackend.Models;
@@ -11,37 +12,42 @@ namespace MyShopProjectBackend.Servises
     public class ShopServise : IShopServise
     {
      private readonly AppDbConection _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public ShopServise(AppDbConection context)
+        public ShopServise(AppDbConection context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
         public async Task<(bool Success, string? ErrorMessage)> CreateShopAsync(CreateShopModel model)
         {
+            var user = await _userManager.FindByIdAsync(model.OwnerId.ToString());
 
-            var user = await _context.users.FindAsync(model.OwnerId);
             if (user == null)
             {
-                return (false,"Користувача не знайдено");
+                return (false, "Користувача не знайдено");
             }
 
-            if (user.Role != "Seller")
+            // Перевірка, чи користувач має роль "Seller"
+            var isSeller = await _userManager.IsInRoleAsync(user, "Seller");
+            if (!isSeller)
             {
-                return (false,"Ви не зареестрованфі як продавець");
+                return (false, "Ви не зареєстровані як продавець");
             }
 
             var shop = new Models.Shop
             {
                 Name = model.Name,
                 Description = model.Description,
-                OwnerId = user.Id
-
+                OwnerId = int.Parse(user.Id)
             };
+
             await _context.shops.AddAsync(shop);
             await _context.SaveChangesAsync();
 
-            return (true, null); 
+            return (true, null);
         }
+
 
         public async Task<(bool Success, string? ErrorMessage)> DeleteShopAsync(DeleteShopModel model)
         {

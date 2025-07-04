@@ -1,9 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using MyShopProjectBackend.Models;
 
 namespace MyShopProjectBackend.Db
 {
-    public class AppDbConection : DbContext
+    public class AppDbConection : IdentityDbContext<ApplicationUser>
     {
         public AppDbConection(DbContextOptions<AppDbConection> options) : base(options)
         {
@@ -15,7 +17,6 @@ namespace MyShopProjectBackend.Db
         public DbSet<ProductReview> productReviews  { get; set; } // Таблиця відгуків на продукти
         public DbSet<Shop> shops  { get; set; } // Таблиця магазинів
         public DbSet<ShopOrder> shopOrders  { get; set; } // Таблиця замовлень магазинів
-        public DbSet<User> users  { get; set; } // Таблиця користувачів
         public DbSet<Cart> carts { get; set; } // Таблиця кошиків
         public DbSet<CartItem> cartItems { get; set; } // Таблиця товарів в кошиках
        
