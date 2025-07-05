@@ -1,273 +1,190 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using MyShopProjectBackend.Db;
-using MyShopProjectBackend.Models;
+using MyShopProjectBackend.Servises.Interface;
+using MyShopProjectBackend.ViewModels;
+using System.Security.Claims;
 
 namespace MyShopProjectBackend.Controllers
 {
 
     [ApiController]
     [Route("api/[controller]")]
-    public class CartController : Controller
+    public class CartController : ControllerBase
     {
 
-        private readonly AppDbConection _context;
+        private readonly ICartServises _cartServises;
         // GET: CartController
         [HttpGet]
         public ActionResult Index()
         {
-            return View();
+           return Ok("Cart Controller is working");
         }
-        public CartController(AppDbConection conection)
+        public CartController(ICartServises cartServises)
         {
-            _context = conection;
+            _cartServises = cartServises;
         }
-
-        [HttpGet("GetCart/{userId}")]
-        public async Task<IActionResult> GetCart(int userId)
+        [Authorize]
+        [HttpGet("GetCart")]
+        public async Task<IActionResult> GetCart()
         {
-            var user = await _context.users.FindAsync(userId);// Отримуємо користувача за ID
-                                                              // Якщо користувач не знайдений, повертаємо 404 Not Found
-            if (user == null)
+            if (!ModelState.IsValid)
             {
-                return NotFound("Користувач не знайдений");
+                return BadRequest(ModelState); // Перевірка моделі на валідність
             }
-            var cart = await _context.carts.FirstOrDefaultAsync(c => c.UserId == userId);
-
-            if (cart == null)
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier); // Отримання ідентифікатора користувача з токена
+            if (userIdClaim == null)
             {
-                return NotFound("Кошик не знайдено");
+                return Unauthorized("User ID claim not found");
+            }
+            if (!int.TryParse(userIdClaim.Value, out int userId))
+            {
+                return BadRequest("Invalid user ID");
             }
 
-            var carItems = await _context.cartItems
-                .Include(ci => ci.Product) // Завантажуємо продукт для кожного товару в кошику
-                .Where(ci => ci.CartId == cart.Id) // Фільтруємо товари по ID кошика
-                .ToListAsync(); // Отримуємо список товарів в кошику
+            var result = await _cartServises.GetCartAsync(userId); // Виклик методу для отримання кошика користувача
 
-            var CartDto = new DTO.CartDto// DTO для повернення даних
+            if (!result.Success)
             {
-                UserId = cart.UserId,// ID користувача, якому належить кошик
-                Id = cart.Id,// ID кошика
-
-                Items = carItems.Select(c => new DTO.CartItemDto// DTO для кожного товару в кошику
-                {
-                    Id = c.Id,// ID товару в кошику
-                    Quantity = c.Quantity,// Кількість товару в кошику
-                    ProductId = c.ProductId,// ID продукту
-                    ProductName = c.Product.Name,// Назва продукту
-                    ProductPrice = c.Product.Price//    Ціна продукту
-                }).ToList()
-            };
-
-            return Ok(CartDto);
+                return BadRequest(result.ErrorMessage); // Повернення помилки, якщо отримання кошика не вдалось
+            }
+            return Ok(result);
         }
 
-
+        [Authorize]
         [HttpPost("AddToCart")]
-        public async Task<IActionResult> AddToCart(int userId, int productId, int quantity)
+        public async Task<IActionResult> AddToCart(AddToCartModel model)
         {
-            var user = await _context.users.FindAsync(userId);
-            if (user == null)
+            if (!ModelState.IsValid)
             {
-                return NotFound("Користувач не знайдений");
+                return BadRequest(ModelState); // Перевірка моделі на валідність
             }
-            var product = await _context.products.FindAsync(productId);
-            if (product == null)
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier); // Отримання ідентифікатора користувача з токена
+            if (userIdClaim == null)
             {
-                return NotFound("Товар не знайдено");
+                return Unauthorized("User ID claim not found");
             }
-            if (product.Quantity < quantity)
+            if (!int.TryParse(userIdClaim.Value, out int userId))
             {
-                return BadRequest("Недостатньо товару на складі");
+                return BadRequest("Invalid user ID");
             }
+            model.UserId = userId; // Присвоєння ID користувача до моделі
 
-            var cart = await _context.carts.Include(c => c.Items).FirstOrDefaultAsync(c => c.UserId == userId); // Отримуємо кошик користувача і його товари
-            if (cart == null)
-            {
-                cart = new Models.Cart
-                {
-                    UserId = userId,
-                    Items = new List<Models.CartItem>()
-                };
-                await _context.carts.AddAsync(cart); // Якщо кошик не існує, створюємо новий
-            }
+            var result = await _cartServises.AddToCartAsync(model); // Виклик методу для додавання товару в кошик
 
-            var cartItem = cart.Items.FirstOrDefault(ci => ci.ProductId == productId); // Перевіряємо, чи товар вже є в кошику
-            if (cartItem == null)
+            if (!result.Success)
             {
-                cart.Items.Add(new Models.CartItem
-                {
-                    ProductId = productId,
-                    Quantity = quantity
-                });
+                return BadRequest(result.ErrorMessage); // Повернення помилки, якщо додавання не вдалось
             }
-            else
-            {
-                cartItem.Quantity += quantity;  // Додаємо до наявної кількості
-            }
-            await _context.SaveChangesAsync(); // Зберігаємо зміни в базі даних
-
-            return Ok("Товар успішно додано до кошика");
+            return Ok(new { message = "Товар успішно додано до кошика" });
         }
-
+        [Authorize]
         [HttpPost("UpdateCart")]
-        public async Task<IActionResult> UpdateCart(int userId, int productId, int quantity)
+        public async Task<IActionResult> UpdateCart(UpdateCartModel model)
         {
-            var user = await _context.users.FindAsync(userId);
-            if (user == null)
+            if (!ModelState.IsValid)
             {
-                return NotFound("Користувач не знайдений");
+                return BadRequest(ModelState); // Перевірка моделі на валідність
             }
-            var product = await _context.products.FindAsync(productId);
-            if (product == null)
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier); // Отримання ідентифікатора користувача з токена
+            if (userIdClaim == null)
             {
-                return NotFound("Товар не знайдено");
+                return Unauthorized("User ID claim not found");
             }
-            if (product.Quantity < quantity)
+            if (!int.TryParse(userIdClaim.Value, out int userId))
             {
-                return BadRequest("Недостатньо товару на складі");
+                return BadRequest("Invalid user ID");
+            }
+            model.UserId = userId; // Присвоєння ID користувача до моделі
+            var result = await _cartServises.UpdateCartAsync(model); // Виклик методу для оновлення товару в кошику
+
+            if (!result.Success)
+            {
+                return BadRequest(result.ErrorMessage); // Повернення помилки, якщо оновлення не вдалось
             }
 
-            var cart = await _context.carts.Include(c => c.Items).FirstOrDefaultAsync(c => c.UserId == userId); // Отримуємо кошик користувача і його товари
-            if (cart == null)
-            {
-                return NotFound("Кошик не знайдено");
-            }
-            var cartItem = cart.Items.FirstOrDefault(ci => ci.ProductId == productId); // Перевіряємо, чи товар є в кошику
-            if (cartItem == null)
-            {
-                return NotFound("Товар не знайдено в кошику");
-            }
-
-            if (quantity >= 0)
-            {
-                cartItem.Quantity = quantity; // Оновлюємо кількість товару в кошику
-            }
-
-            await _context.SaveChangesAsync(); // Зберігаємо зміни в базі даних
-
-            return Ok("Кошик успішно оновлено");
+            return Ok(new { message = "Кошик успішно оновлено" });
         }
 
-
-
+        [Authorize]
         [HttpPost("RemoveFromCart")]
-        public async Task<IActionResult> RemoveFromCart(int userId, int productId)
+        public async Task<IActionResult> RemoveFromCart(RemoveCartModel model)
         {
-            var user = await _context.users.FindAsync(userId);
-            if (user == null)
+            if (!ModelState.IsValid)
             {
-                return NotFound("Користувач не знайдений");
+                return BadRequest(ModelState); // Перевірка моделі на валідність
             }
-            var product = await _context.products.FindAsync(productId);
-            if (product == null)
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier); // Отримання ідентифікатора користувача з токена
+            if (userIdClaim == null)
             {
-                return NotFound("Товар не знайдено");
+                return Unauthorized("User ID claim not found");
             }
-
-            var cart = await _context.carts.Include(c => c.Items).FirstOrDefaultAsync(c => c.UserId == userId); // Отримуємо кошик користувача і його товари
-            if (cart == null)
+            if (!int.TryParse(userIdClaim.Value, out int userId))
             {
-                return NotFound("Кошик не знайдено");
+                return BadRequest("Invalid user ID");
             }
+            model.UserId = userId; // Присвоєння ID користувача до моделі
 
-            var CartIttem = cart.Items.FirstOrDefault(ci => ci.ProductId == productId); // Перевіряємо, чи товар є в кошику
-            if (CartIttem == null)
+            var result = await _cartServises.RemoveFromCartAsync(model); // Виклик методу для видалення товару з кошика
+
+            if (!result.Success)
             {
-                return NotFound("Товар не знайдено в кошику");
+                return BadRequest(result.ErrorMessage); // Повернення помилки, якщо видалення не вдалось
             }
-
-            cart.Items.Remove(CartIttem); // Видаляємо товар з кошика
-            _context.cartItems.Remove(CartIttem); // Видаляємо товар з таблиці товарів в кошику
-
-            await _context.SaveChangesAsync(); // Зберігаємо зміни в базі даних
-
-            return Ok("Товар успішно видалено з кошика");
+            return Ok(new { message = "Товар успішно видалено з кошика" });
         }
-
+        [Authorize]
         [HttpPost("ClearCart")]
 
-        public async Task<IActionResult> ClearCart(int userId)
+        public async Task<IActionResult> ClearCart()
         {
-            var user = await _context.users.FindAsync(userId);
-            if (user == null)
+            if (!ModelState.IsValid)
             {
-                return NotFound("Користувач не знайдений");
+                return BadRequest(ModelState); // Перевірка моделі на валідність
             }
-            var cart = await _context.carts.Include(c => c.Items).FirstOrDefaultAsync(c => c.UserId == userId); // Отримуємо кошик користувача і його товари
-            if (cart == null)
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier); // Отримання ідентифікатора користувача з токена
+            if (userIdClaim == null)
             {
-                return NotFound("Кошик не знайдено");
+                return Unauthorized("User ID claim not found");
             }
-            _context.cartItems.RemoveRange(cart.Items); // Видаляємо всі товари з кошика
-            await _context.SaveChangesAsync();
+            if (!int.TryParse(userIdClaim.Value, out int userId))
+            {
+                return BadRequest("Invalid user ID");
+            }
 
-            return Ok("Кошик успішно очищено");
+            var result = await _cartServises.ClearCartAsync(userId); // Виклик методу для очищення кошика
+
+            if (!result.Success)
+            {
+                return BadRequest(result.ErrorMessage); // Повернення помилки, якщо очищення не вдалось
+            }
+            return Ok(new { message = "Кошик успішно очищено" });
+
         }
-
+        [Authorize]
         [HttpPost("Checkout")]
-        public async Task<IActionResult> Checkout(int userId)
+        public async Task<IActionResult> Checkout()
         {
-            var user = await _context.users.FindAsync(userId);
-            if (user == null)
+            if (!ModelState.IsValid)
             {
-                return NotFound("Користувач не знайдений");
+                return BadRequest(ModelState); // Перевірка моделі на валідність
             }
-            var cart = await _context.carts.Include(c => c.Items).FirstOrDefaultAsync(c => c.UserId == userId); // Отримуємо кошик користувача і його товари
-            if (cart == null || !cart.Items.Any())
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier); // Отримання ідентифікатора користувача з токена
+            if (userIdClaim == null)
             {
-                return BadRequest("Кошик порожній або не знайдено");
+                return Unauthorized("User ID claim not found");
             }
-            // Перевіряємо наявність товарів в кошику
-            foreach (var item in cart.Items)
+            if (!int.TryParse(userIdClaim.Value, out int userId))
             {
-                var product = await _context.products.FindAsync(item.ProductId);
-                if (product == null)
-                {
-                    return NotFound($"Товар з ID {item.ProductId} не знайдено");
-                }
-                if (product.Quantity < item.Quantity)
-                {
-                    return BadRequest($"Недостатньо товару {product.Name} на складі");
-                }
-                product.Quantity -= item.Quantity; // Зменшуємо кількість товару на складі
+                return BadRequest("Invalid user ID");
             }
 
-            // Створюємо нове замовлення
-            var order = new Models.Order
+            var result = await _cartServises.CheckoutAsync(userId); // Виклик методу для очищення кошика
+
+            if (!result.Success)
             {
-                BuyerId = userId,
-                Status = ShopOrderStatus.Confirmed.ToString(), // Встановлюємо статус замовлення
-                OrderItems = new List<Models.OrderItem>()
-
-            };
-            _context.orders.Add(order); // Додаємо замовлення до бази даних
-
-
-            foreach (var item in cart.Items)
-            {
-                if (item.Product.Quantity < item.Quantity)
-                {
-                    return BadRequest($"Недостатньо товару {item.Product.Name} на складі");
-                }
-
-                var orderItem = new Models.OrderItem
-                {
-                    ProductId = item.ProductId,
-                    Quantity = item.Quantity,
-                    UnitPrice = item.Product.Price * item.Quantity // Зберігаємо ціну товару на момент оформлення замовлення
-                };
-                item.Product.Quantity -= item.Quantity; // Зменшуємо кількість товару на складі
-                order.OrderItems.Add(orderItem); // Додаємо товар до замовлення
+                return BadRequest(result.ErrorMessage); // Повернення помилки, якщо очищення не вдалось
             }
-            _context.orders.Add(order); // Додаємо замовлення до бази даних
-            cart.Items.Clear(); // Очищаємо кошик після оформлення замовлення
-            _context.cartItems.RemoveRange(cart.Items); // Видаляємо всі товари з таблиці товарів в кошику
-
-            await _context.SaveChangesAsync(); // Зберігаємо зміни в базі даних
-
-            return Ok("Замовлення успішно оформлено");
+            return Ok(new { message = "Замовлення успішно оформлено" });
         }
     }
 }

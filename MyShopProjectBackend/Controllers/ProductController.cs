@@ -1,10 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using MyShopProjectBackend.Db;
-using MyShopProjectBackend.DTO;
-using MyShopProjectBackend.Models;
+using MyShopProjectBackend.Servises.Interface;
 using MyShopProjectBackend.ViewModels;
 using System.Security.Claims;
 
@@ -12,19 +8,18 @@ namespace MyShopProjectBackend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ProductController : Controller
+    public class ProductController : ControllerBase
     {
-        private readonly AppDbConection _context;
-
-        public ProductController(AppDbConection conection)
-        {
-            _context = conection;
+        private readonly IProductServises _productServises;
+        public ProductController(IProductServises productServises)
+        {;
+            _productServises = productServises;
         }
 
         [HttpGet]
         public ActionResult Index()
         {
-            return View();
+            return Ok("Product Controller is working");
         }
         [Authorize(Roles = "Seller")]
         [HttpPost("AddProduct")]
@@ -42,32 +37,15 @@ namespace MyShopProjectBackend.Controllers
                 return Unauthorized("Invalid user identity");
             }
 
-          var shop = await _context.shops.FindAsync(model.ShopId);
+            model.OwnerId = userId; // Прив'язка ID користувача до моделі
 
-            if (shop == null) { 
-            return NotFound("Магазин не знайдено");
-            }
-
-            if (shop.OwnerId != userId) {
-                return Forbid("Ви не маєте права додавати товар до чужого магазину");
-            }
-
-            var product = new Product
+            var result = await _productServises.AddProductAsync(model); // Виклик сервісу для додавання товару
+            if (!result.Success)
             {
-                Name = model.Name,
-                Description = model.Description,
-                Category = model.Category,
-                Price = model.Price,
-                ShopId = shop.Id,
-                Quantity = model.Quantity,
-                ImageData = model.ImageData,
-                ImageMimeType = model.ImageMimeType,
-            };
+                return BadRequest(result.ErrorMessage); // Повернення помилки, якщо додавання не вдалось
+            }
 
-            await _context.products.AddAsync(product);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Товар успішно додано", productId = product.Id });
+            return Ok(new { message = "Товар успішно додано" });
         }
 
         [Authorize(Roles = "Seller")]
@@ -84,36 +62,20 @@ namespace MyShopProjectBackend.Controllers
             {
                 return Unauthorized("Invalid user identity");
             }
-            var product = await _context.products.FindAsync(model.ProductId);// Отримання товару за його ID
-            if (product == null) { 
-            return NotFound("Товар не знайдено");
-            }
-            var shop = await _context.shops.FindAsync(product.ShopId);// Отримання магазину, до якого належить товар
-            if (shop == null) { 
-            return NotFound("Магазин товару не знайдено");
-            }
+            model.OwnerId = userId; // Прив'язка ID користувача до моделі
 
-            if(shop.OwnerId != userId)
+            var result = await _productServises.UpdateProductAsync(model);// Виклик сервісу для оновлення товару
+            if (!result.Success)
             {
-                return Forbid("Ви не маєте права редагувати товар з чужого магазину");
+                return BadRequest(result.ErrorMessage);// Повернення помилки, якщо оновлення не вдалось
             }
 
-            product.Name = model.Name;
-            product.Description = model.Description;
-            product.Category = model.Category;
-            product.Price = model.Price;
-            product.Quantity = model.Quantity;
-            product.ImageData = model.ImageData;
-            product.ImageMimeType = model.ImageMimeType;
-
-            await _context.SaveChangesAsync();// Збереження змін у базі даних
-
-            return Ok(new { message = "Товар оновлено успішно", productId = product.Id });
+            return Ok(new { message = "Товар оновлено успішно" });
         }
 
         [Authorize(Roles = "Seller")]
         [HttpPost("DeleteProduct")]
-        public async Task<IActionResult> DeleteProduct(int productId)
+        public async Task<IActionResult> DeleteProduct(DeleteProductModel model)
         {
             if (!ModelState.IsValid) 
             {
@@ -125,75 +87,35 @@ namespace MyShopProjectBackend.Controllers
             {
                 return Unauthorized("Invalid user identity");
             }
+            model.OwnerId = userId; // Прив'язка ID користувача до моделі
 
-            var product = await _context.products.FindAsync(productId);// Отримання товару за його ID
-
-            if (product == null) // Перевірка, чи товар існує
-            { 
-            return NotFound("Товар не знайдено");
+            var result = await _productServises.DeleteProductAsync(model);// Виклик сервісу для видалення товару
+            if (!result.Success) { 
+            return BadRequest(result.ErrorMessage);// Повернення помилки, якщо видалення не вдалось
             }
-
-            var shop = await _context.shops.FindAsync(product.ShopId);// Отримання магазину, до якого належить товар
-            if (shop == null) 
-            {
-                return NotFound("Магазин товару не знайдено");
-            }
-
-            if(shop.OwnerId != userId)// Перевірка, чи є користувач власником магазину
-            {
-             return Forbid("Ви не маєте права видаляти товар з чужого магазину");
-            }
-            _context.products.Remove(product);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Товар успішно видалено", productId = productId });
+            return Ok(new { message = "Товар успішно видалено" });
         }
-        [HttpGet("GetProductById")]
-        public async Task<IActionResult> GetProductById(int productId)
+        
+        [HttpGet("GetProductByName")]
+        public async Task<IActionResult> GetProductByName(string productName)
         {
-            if (!ModelState.IsValid)
+            var result = await _productServises.GetProductByNameAsync(productName);
+            if (!result.Success)
             {
-                return BadRequest(ModelState);
+                return BadRequest(result.ErrorMessage);
             }
-            var product = await _context.products.FindAsync(productId);
-
-            if (product == null)
-            {
-                return NotFound("Товар не знайдено");
-            }
-
-            return Ok(product);
+            return Ok(result.Products);
         }
         [HttpGet("GetProductsByShop")]
         public async Task<IActionResult> GetProductsByShop(int shopId)
         {
-            if (!ModelState.IsValid)
+           var result = await _productServises.GetProductsByShopAsync(shopId);
+            if (!result.Success)
             {
-                return BadRequest(ModelState);
+                return BadRequest(result.ErrorMessage);
             }
-
-            var shop = await _context.shops.FindAsync(shopId);
-
-            if(shop == null)
-            {
-                return NotFound("Магазин не знайдено");
-            }
-
-            var products = await _context.products.Where(p => p.ShopId == shopId).Select(p => new ProductDto
-            {
-                Id = p.Id,
-                Name = p.Name,
-                Description = p.Description,
-                Category = p.Category,
-                Price = p.Price,
-                ShopId = p.ShopId,
-                Quantity = p.Quantity,
-                ImageData = p.ImageData,
-                ImageMimeType = p.ImageMimeType
-            }).ToListAsync();
-
-            return Ok(products);
+            return Ok(result.Products);
         }
-
+        //197
     }
 }

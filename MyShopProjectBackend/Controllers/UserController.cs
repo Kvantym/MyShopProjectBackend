@@ -1,9 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using MyShopProjectBackend.Db;
-using MyShopProjectBackend.Models;
+using MyShopProjectBackend.Servises.Interface;
 using MyShopProjectBackend.ViewModels;
 using System.Security.Claims;
 
@@ -11,30 +8,30 @@ namespace MyShopProjectBackend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class UserController : Controller
+    public class UserController : ControllerBase
     {
-        private readonly AppDbConection _context;
+        private readonly IUserServise _userServise;
 
-        public UserController(AppDbConection conection)
+        public UserController(IUserServise userServise)
         {
-            _context = conection;
+            _userServise = userServise;
         }
 
         [HttpGet]
         public ActionResult Index()
         {
-            return View();
+            return Ok("User Controller is working");
         }
 
         [HttpGet("GetUserById")]
         public async Task<IActionResult> GetUserById(int userId)
         {
-           var user = await _context.users.FindAsync(userId);
-            if (user == null)
+            var result = await _userServise.GetUserByIdAsync(userId);
+            if (!result.Success)
             {
-                return NotFound("Користувача не знайдеено");
+                return BadRequest(result.ErrorMessage);
             }
-            return Ok(user);
+            return Ok(result.user);
         }
         [Authorize]
         [HttpPost("UpdateUser")]
@@ -52,34 +49,42 @@ namespace MyShopProjectBackend.Controllers
                 return Unauthorized("Користувач не авторизований");
             }
 
-            int userId = int.Parse(userIdClaim);
-            var user = await _context.users.FindAsync(userId);
-
-            if (user == null)
+            model.UserId = int.Parse(userIdClaim);
+            var result = await _userServise.UpdateUserAsync(model);
+            if (!result.Success)
             {
-                return NotFound("Користувача не знайдеено");
+                return BadRequest(result.ErrorMessage);
             }
-
-            user.UserName = model.Name;
-            user.Email = model.Email;
-            user.Password = model.Password;
-          
-            await _context.SaveChangesAsync();
 
             return Ok(new { message = "Користувача оновлено успішно" });
         }
         [HttpGet("GetAllUsers")]
         public async Task<IActionResult> GetAllUsers()
         {
-            var users = await _context.users.ToListAsync();
 
-            if(users == null)
+            var result = await _userServise.GetAllUsersAsync();
+            if (!result.Success)
             {
-                return NotFound("Користувачів не знайдено ");
+                return BadRequest(result.ErrorMessage);
             }
+            return Ok(result.Users);
+        }
 
-            return Ok(users);
-
+        [Authorize]
+        [HttpPost("DeleteUser")]
+        public async Task<IActionResult> DeleteUser()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userIdClaim == null || !int.TryParse(userIdClaim, out int userId))
+            {
+                return Unauthorized("Невірний ідентифікатор користувача");
+            }
+            var resualt = await _userServise.DeleteUserAsync(userId);
+            if (!resualt.Success)
+            {
+                return BadRequest(resualt.ErrorMessage);
+            }
+            return Ok(new { message = "Користувача видалено успішно" });
         }
 
     }

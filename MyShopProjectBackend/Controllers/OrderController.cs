@@ -1,202 +1,124 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using MyShopProjectBackend.Db;
-using MyShopProjectBackend.DTO;
-using MyShopProjectBackend.Models;
+using MyShopProjectBackend.Servises.Interface;
+using MyShopProjectBackend.ViewModels;
 
 namespace MyShopProjectBackend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class OrderController : Controller
+    public class OrderController : ControllerBase
     {
-        private readonly AppDbConection _context;
+        private readonly IOrderServises _orderServises;
 
-        public OrderController(AppDbConection conection)
+        public OrderController(IOrderServises orderServises)
         {
-            _context = conection;
+            _orderServises = orderServises;
         }
 
         // GET: OrderController
         [HttpGet]
         public ActionResult Index()
         {
-            return View();
+          return Ok("Order Controller is working");
         }
 
         [Authorize(Roles = "Seller")]
         [HttpGet("GetOrdersForUser")]
-        public async Task<IActionResult> GetOrdersForUser(int userId)
+        public async Task<IActionResult> GetOrdersForUser(int buyerId)
         {
-            var user = await _context.users.FindAsync(userId);
-            if (user == null)
+            var sellerIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (sellerIdClaim == null || !int.TryParse(sellerIdClaim, out int sellerId))
             {
-                return NotFound("Користувача не знайдено");
+                return Unauthorized("Некоректний ідентифікатор продавця");
             }
 
-            if (!User.IsInRole("Seller"))
+            var result = await _orderServises.GetOrdersForUserAsync(buyerId,sellerId);
+
+            if (!result.Success)
             {
-                return BadRequest("Можна тільки продавцю");
+                return BadRequest(result.ErrorMessage);
             }
-
-            var orders = await _context.orders
-                .Where(o => o.BuyerId == userId)
-                .Include(o => o.OrderItems)
-                .ThenInclude(oi => oi.Product)
-                .ToListAsync();
-
-            if (orders == null || !orders.Any())
-            {
-                return NotFound("Замовлення не знайдено для цього користувача");
-            }
-
-            var orderDtos = GetOrderDtos(orders);
-
-            return Ok(orderDtos);
+            return Ok(result.Orders);
         }
 
         [Authorize(Roles = "Seller")]
         [HttpGet("GetOrderById")]
         public async Task<IActionResult> GetOrderById(int orderId)
         {
-            var order = await _context.orders
-                .Include(o => o.OrderItems)
-                .ThenInclude(oi => oi.Product)
-                .FirstOrDefaultAsync(o => o.Id == orderId);
-
-            if (order == null)
+            var sellerIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (sellerIdClaim == null || !int.TryParse(sellerIdClaim, out int sellerId))
             {
-                return NotFound("Замовлення не знайдено");
+                return Unauthorized("Некоректний ідентифікатор продавця");
             }
 
-            if (!User.IsInRole("Seller"))
+            var result = await _orderServises.GetOrderByIdAsync(orderId, sellerId);
+
+            if (!result.Success)
             {
-                return BadRequest("Можна тільки продавцю");
+                return BadRequest(result.ErrorMessage);
             }
-
-            var orderDto = new OrderDto
-            {
-                OrderId = order.Id,
-                Status = order.Status,
-                Items = order.OrderItems.Select(oi => new OrderItemDto
-                {
-                    ProductId = oi.ProductId,
-                    Quantity = oi.Quantity,
-                    UnitPrice = oi.UnitPrice,
-                    ProductName = oi.Product.Name
-                }).ToList()
-            };
-
-            return Ok(orderDto);
+            return Ok(result.Order);
         }
 
         [Authorize(Roles = "Seller")]
         [HttpPost("UpdateOrderStatus")]
-        public async Task<IActionResult> UpdateOrderStatus(int orderId, [FromBody] string status)
+        public async Task<IActionResult> UpdateOrderStatus(UpdateOrderModel model)
         {
-            if (!User.IsInRole("Seller"))
+
+            var sellerIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (sellerIdClaim == null || !int.TryParse(sellerIdClaim, out int sellerId))
             {
-                return BadRequest("Можна тільки продавцю");
+                return Unauthorized("Некоректний ідентифікатор продавця");
+            } 
+           
+            model.SellerId = sellerId;
+            var result = await _orderServises.UpdateOrderStatusAsync(model);
+            if (!result.Success)
+            {
+                return BadRequest(result.ErrorMessage);
             }
 
-            var order = await _context.orders.FindAsync(orderId);
-            if (order == null)
-            {
-                return NotFound("Замовлення не знайдено");
-            }
-
-            var validStatuses = new[]
-            {
-                ShopOrderStatus.Pending,
-                ShopOrderStatus.Completed,
-                ShopOrderStatus.Cancelled,
-                ShopOrderStatus.InProgress,
-                ShopOrderStatus.Refunded,
-                ShopOrderStatus.Shipped,
-                ShopOrderStatus.Delivered,
-                ShopOrderStatus.Confirmed
-            };
-
-            if (!validStatuses.Contains(status))
-            {
-                return BadRequest("Невірний статус");
-            }
-
-            if (order.Status == ShopOrderStatus.Completed.ToString() ||
-                order.Status == ShopOrderStatus.Cancelled.ToString())
-            {
-                return BadRequest("Замовлення вже завершено або скасовано");
-            }
-
-            order.Status = status;
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Статус замовлення оновлено", newStatus = order.Status });
+            return Ok(new { message = "Статус замовлення оновлено", newStatus = model.Status });
         }
 
         [Authorize(Roles = "Seller")]
         [HttpPost("DeleteOrder")]
         public async Task<IActionResult> DeleteOrder(int orderId)
         {
-            if (!User.IsInRole("Seller"))
+            var sellerIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (sellerIdClaim == null || !int.TryParse(sellerIdClaim, out int sellerId))
             {
-                return BadRequest("Можна тільки продавцю");
+                return Unauthorized("Некоректний ідентифікатор продавця");
             }
 
-            var order = await _context.orders.FindAsync(orderId);
-            if (order == null)
+            var result = await _orderServises.DeleteOrderAsync(orderId, sellerId);
+            if (!result.Success)
             {
-                return NotFound("Замовлення не знайдено");
+                return BadRequest(result.ErrorMessage);
             }
-
-            var orderItems = await _context.orderItems.Where(oi => oi.OrderId == orderId).ToListAsync();
-            _context.orderItems.RemoveRange(orderItems);
-            _context.orders.Remove(order);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Замовлення успішно видалено" });
+            return Ok(new { message = "Замовлення видалено" });
         }
 
         [Authorize(Roles = "Seller")]
         [HttpGet("GetAllOrders")]
-        public async Task<IActionResult> GetAllOrders()
+        public async Task<IActionResult> GetAllOrders(int shopId)
         {
-            if (!User.IsInRole("Seller"))
+            var sellerIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (sellerIdClaim == null || !int.TryParse(sellerIdClaim, out int sellerId))
             {
-                return BadRequest("Можна тільки продавцю");
+                return Unauthorized("Некоректний ідентифікатор продавця");
             }
 
-            var orders = await _context.orders
-                .Include(o => o.OrderItems)
-                .ThenInclude(oi => oi.Product)
-                .ToListAsync();
-
-            if (orders == null || !orders.Any())
+          var result = await _orderServises.GetAllOrdersAsync(shopId, sellerId);
+            if (!result.Success)
             {
-                return NotFound("Замовлення не знайдено");
+                return BadRequest(result.ErrorMessage);
             }
-
-            var orderDtos = GetOrderDtos(orders);
-
-            return Ok(orderDtos);
+            
+            return Ok(result.Orders);
         }
 
-        private List<OrderDto> GetOrderDtos(List<Order> orders)
-        {
-            return orders.Select(o => new OrderDto
-            {
-                OrderId = o.Id,
-                Status = o.Status,
-                Items = o.OrderItems.Select(oi => new OrderItemDto
-                {
-                    ProductId = oi.ProductId,
-                    Quantity = oi.Quantity,
-                    UnitPrice = oi.UnitPrice,
-                    ProductName = oi.Product.Name
-                }).ToList()
-            }).ToList();
-        }
+       
     }
 }
