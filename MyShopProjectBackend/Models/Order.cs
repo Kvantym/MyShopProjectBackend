@@ -4,7 +4,7 @@
     {
         public int Id { get; set; } // Ід замовлення
         public DateTime  CreateAt { get; set; } = DateTime.UtcNow; // Дата створення замовлення
-        public int BuyerId { get; set; } // Ідентифікатор покупця (користувача, який зробив замовлення)
+        public string BuyerId { get; set; } // Ідентифікатор покупця (користувача, який зробив замовлення)
        // public User Buyer { get; set; } // Покупець (користувач, який зробив замовлення)
         public string Status { get; set; }
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>(); // Колекція товарів в замовленні

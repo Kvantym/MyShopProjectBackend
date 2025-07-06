@@ -1,14 +1,16 @@
 ﻿using MyShopProjectBackend.DTO;
-using MyShopProjectBackend.ViewModels;
+using MyShopProjectBackend.ViewModels.Create;
+using MyShopProjectBackend.ViewModels.Delete;
+using MyShopProjectBackend.ViewModels.Update;
 
 namespace MyShopProjectBackend.Servises.Interface
 {
     public interface IShopServise
     {
-        public Task<(bool Success, string? ErrorMessage)> CreateShopAsync(CreateShopModel model);
-        public Task<(bool Success, string? ErrorMessage)> UpdateShopAsync(UpdateShopModel model);
-        public Task<(bool Success, string? ErrorMessage)> DeleteShopAsync(DeleteShopModel model);
-        public Task<(bool Success, string? ErrorMessage, List<ShopDto> Shops)> GetAllShopsAsync(int OwnerId);
-        public Task<(bool Success, string? ErrorMessage, ShopDto? Shop)> GetShopByIdAsync(int shopId);
+        public Task CreateShopAsync(CreateShopModel model);
+        public Task UpdateShopAsync(UpdateShopModel model);
+        public Task DeleteShopAsync(DeleteShopModel model);
+        public Task< List<ShopDto>> GetAllShopsAsync(string OwnerId);
+        public Task<ShopDto?> GetShopByIdAsync(int shopId);
     }
 }

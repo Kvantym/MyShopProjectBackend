@@ -1,16 +1,18 @@
 ﻿using MyShopProjectBackend.DTO;
-using MyShopProjectBackend.ViewModels;
+using MyShopProjectBackend.ViewModels.Add;
+using MyShopProjectBackend.ViewModels.Remove;
+using MyShopProjectBackend.ViewModels.Update;
 
 namespace MyShopProjectBackend.Servises.Interface
 {
     public interface ICartServises
     {
-        public  Task<(bool Success, string? ErrorMessage, CartDto? CartDto)> GetCartAsync(int userId);
-        public Task<(bool Success, string? ErrorMessage)> AddToCartAsync(AddToCartModel model);
-        public Task<(bool Success, string? ErrorMessage)> UpdateCartAsync(UpdateCartModel model);
-        public Task<(bool Success, string? ErrorMessage)> RemoveFromCartAsync(RemoveCartModel model);
-        public Task<(bool Success, string? ErrorMessage)> ClearCartAsync(int userId);
-        public Task<(bool Success, string? ErrorMessage)> CheckoutAsync(int userId);
+        public  Task<CartDto?> GetCartAsync(string userId);
+        public Task AddToCartAsync(AddToCartModel model);
+        public Task UpdateCartAsync(UpdateCartModel model);
+        public Task RemoveFromCartAsync(RemoveCartModel model);
+        public Task ClearCartAsync(string userId);
+        public Task CheckoutAsync(string userId);
 
     }
 }

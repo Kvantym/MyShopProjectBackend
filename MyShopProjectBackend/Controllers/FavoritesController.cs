@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MyShopProjectBackend.Extensions;
 using MyShopProjectBackend.Servises.Interface;
-using MyShopProjectBackend.ViewModels;
+using MyShopProjectBackend.ViewModels.Add;
+using MyShopProjectBackend.ViewModels.Remove;
 
 namespace MyShopProjectBackend.Controllers
 {
@@ -26,18 +28,9 @@ namespace MyShopProjectBackend.Controllers
         [HttpPost("AddToFavorites")]
         public async Task<IActionResult> AddToFavorites(AddFavoritModel model)
         {
-            var userIdClime = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-
-            if (userIdClime == null) {
-                return Unauthorized("Користувач не авторизований");
-            }
-            model.UserId = int.Parse(userIdClime);
-
-           var result = await _favoriteServises.AddToFavoritesAsync(model);
-            if (!result.Success)
-            {
-                return BadRequest(result.ErrorMessage);
-            }
+            model.UserId = User.GetUserId();
+            var result =  _favoriteServises.AddToFavoritesAsync(model);
+           
             return Ok(new { message = "Товар успішно додано до обраного" });
         }
 
@@ -45,42 +38,17 @@ namespace MyShopProjectBackend.Controllers
         [HttpPost("RemoveFromFavorites")]
         public async Task<IActionResult> RemoveFromFavorites(RemoveFavoritModel model)
         {
-            var userIdClime = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (userIdClime == null)
-            {
-                return Unauthorized("Користувач не авторизований");
-            }
-            model.UserId = int.Parse(userIdClime);
-
-            var result = await _favoriteServises.RemoveFromFavoritesAsync(model);
-            if (!result.Success)
-            {
-                return BadRequest(result.ErrorMessage);
-            }
+            model.UserId = User.GetUserId();
+            var result =  _favoriteServises.RemoveFromFavoritesAsync(model);
+            
             return Ok(new { message = "Товар успішно видалено з обраного" });
         }
         [Authorize]
         [HttpGet("GetFavoritesByUser")]
         public async Task<IActionResult> GetFavoritesByUser()
         {
-            var userIdClime = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (userIdClime == null)
-            {
-                return Unauthorized("Користувач не авторизований");
-            }
-
-            if (!int.TryParse(userIdClime, out int userId))
-            {
-                return BadRequest("Некоректний ідентифікатор користувача");
-            }
-
-            var result = await _favoriteServises.GetFavoritesAsync(userId);
-            if (!result.Success)
-            {
-                return NotFound(result.ErrorMessage);
-            }
-            return Ok(result.FavoriteProducts);
-
+            var result = await _favoriteServises.GetFavoritesAsync(User.GetUserId());
+            return Ok(result);
         }
     }
 }

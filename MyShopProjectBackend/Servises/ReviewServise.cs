@@ -2,9 +2,12 @@
 using Microsoft.EntityFrameworkCore;
 using MyShopProjectBackend.Db;
 using MyShopProjectBackend.DTO;
+using MyShopProjectBackend.Exceptions;
 using MyShopProjectBackend.Models;
 using MyShopProjectBackend.Servises.Interface;
-using MyShopProjectBackend.ViewModels;
+using MyShopProjectBackend.ViewModels.Create;
+using MyShopProjectBackend.ViewModels.Delete;
+using MyShopProjectBackend.ViewModels.Update;
 
 namespace MyShopProjectBackend.Servises
 {
@@ -18,12 +21,12 @@ namespace MyShopProjectBackend.Servises
             _context = context;
             _userManager = userManager;
         }
-        public async Task<(bool Success, string? ErrorMessage)> AddReviewAsync(CreateReviewModel model)
+        public async Task AddReviewAsync(CreateReviewModel model)
         {
             var product = await _context.products.FindAsync(model.ProductId);
             if (product == null)
             {
-                return (false,"Товар не знайдено");
+                throw new NotFoundException("Товар не знайдено");
             }
 
             var review = new Models.ProductReview
@@ -36,41 +39,37 @@ namespace MyShopProjectBackend.Servises
 
             _context.productReviews.Add(review);
             await _context.SaveChangesAsync();
-
-            return (true,null);
         }
 
-        public async Task<(bool Success, string? ErrorMessage)> DeleteReviewAsync(DeleteReviewModel model)
+        public async Task DeleteReviewAsync(DeleteReviewModel model)
         {
             var user = await _userManager.FindByIdAsync(model.UserId.ToString());
             if (user == null)
             {
-                return (false,"Користувача не знайдено");
+                throw new NotFoundException("Користувача не знайдено");
             }
 
             var review = await _context.productReviews.FindAsync(model.ReviewId);
             if (review == null)
             {
-                return (false, "Відгук не знайдено");
+                throw new NotFoundException("Відгук не знайдено");
             }
 
             if (review.UserId != model.UserId)
             {
-                return (false, "Ви не маєте права видаляти цей відгук");
+                throw new BadRequestException("Ви не маєте права видаляти цей відгук");
             }
 
             _context.productReviews.Remove(review);
             await _context.SaveChangesAsync();
-
-            return (true, null);
         }
 
-        public async Task<(bool Success, string? ErrorMessage, List<ReviewDto> Reviews)> GetReviewsByProductAsync(int productId)
+        public async Task<List<ReviewDto>> GetReviewsByProductAsync(int productId)
         {
             var product = await _context.products.FindAsync(productId);
             if (product == null)
             {
-                return (false, "Товар не знайдено", new List<ReviewDto>());
+                throw new NotFoundException("Товар не знайдено");
             }
 
             var reviewsEntities = await _context.productReviews
@@ -89,38 +88,36 @@ namespace MyShopProjectBackend.Servises
                 Id = r.Id,
                 Rating = r.Rating,
                 ReviewText = r.ReviewText,
-                UserName = users.FirstOrDefault(u => u.Id == r.UserId.ToString())?.UserName ?? "Unknown",
+                UserName = users.FirstOrDefault(u => u.Id == r.UserId.ToString())?.UserName,
 
                 CreatedAt = r.CreatedAt
             }).ToList();
-
-            return (true, null, reviews);
+            return reviews;
         }
 
 
-        public async Task<(bool Success, string? ErrorMessage)> UpdateReviewAsync(UpdateReviewModel model)
+        public async Task UpdateReviewAsync(UpdateReviewModel model)
         {
             var user = await _userManager.FindByIdAsync(model.UserId.ToString());
             if (user == null)
             {
-                return (false, "Користувача не знайдено");
+                throw new NotFoundException("Користувача не знайдено");
             }
 
             var review = await _context.productReviews.FindAsync(model.ReviewId);
             if (review == null)
             {
-                return (false, "Відгук не знайдено");
+                throw new NotFoundException("Відгук не знайдено");
             }
+
             if (review.UserId != model.UserId)
             {
-                return (false, "Ви не маєте права редагувати цей відгук");
+                throw new BadRequestException("Ви не маєте права редагувати цей відгук");
             }
 
             review.Rating = model.Rating;
             review.ReviewText = model.Content;
             await _context.SaveChangesAsync();
-
-            return (true,null);
         }
     }
 }

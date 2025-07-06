@@ -1,9 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MyShopProjectBackend.Db;
 using MyShopProjectBackend.DTO;
+using MyShopProjectBackend.Exceptions;
 using MyShopProjectBackend.Models;
 using MyShopProjectBackend.Servises.Interface;
-using MyShopProjectBackend.ViewModels;
+using MyShopProjectBackend.ViewModels.Create;
+using MyShopProjectBackend.ViewModels.Delete;
+using MyShopProjectBackend.ViewModels.Update;
 
 namespace MyShopProjectBackend.Servises
 {
@@ -16,18 +19,18 @@ namespace MyShopProjectBackend.Servises
         {
             _context = conection;
         }
-        public async Task<(bool Success, string? ErrorMessage)> AddProductAsync(CreateProductModel model)
+        public async Task AddProductAsync(CreateProductModel model)
         {
             var shop = await _context.shops.FindAsync(model.ShopId);
 
             if (shop == null)
             {
-                return (false,"Магазин не знайдено");
+                throw new NotFoundException("Магазин не знайдено");
             }
 
             if (shop.OwnerId != model.OwnerId)
             {
-                return (false, "Ви не маєте права додавати товар до чужого магазину");
+                throw new AuthorizationException("Ви не маєте права додавати товар до чужого магазину");
             }
 
             var product = new Product
@@ -44,36 +47,32 @@ namespace MyShopProjectBackend.Servises
 
             await _context.products.AddAsync(product);
             await _context.SaveChangesAsync();
-
-            return (true,null);
         }
 
-        public async Task<(bool Success, string? ErrorMessage)> DeleteProductAsync(DeleteProductModel model)
+        public async Task DeleteProductAsync(DeleteProductModel model)
         {
-            var product = await _context.products.FindAsync(model.ProductId);// Отримання товару за його ID
+            var product = await _context.products.FindAsync(model.ProductId);
 
-            if (product == null) // Перевірка, чи товар існує
+            if (product == null) 
             {
-                return (false,"Товар не знайдено");
+                throw new NotFoundException("Товар не знайдено");
             }
 
-            var shop = await _context.shops.FindAsync(product.ShopId);// Отримання магазину, до якого належить товар
+            var shop = await _context.shops.FindAsync(product.ShopId);
             if (shop == null)
             {
-                return (false, "Магазин товару не знайдено");
+                throw new NotFoundException("Магазин товару не знайдено");
             }
 
-            if (shop.OwnerId != model.OwnerId)// Перевірка, чи є користувач власником магазину
+            if (shop.OwnerId != model.OwnerId)
             {
-                return (false, "Ви не маєте права видаляти товар з чужого магазину");
+                throw new NotFoundException("Ви не маєте права видаляти товар з чужого магазину");
             }
             _context.products.Remove(product);
             await _context.SaveChangesAsync();
-
-            return (true,null);
         }
 
-        public async Task<(bool Success, string? ErrorMessage, List<ProductDto> Products)> GetProductByNameAsync(string productName)
+        public async Task<List<ProductDto>> GetProductByNameAsync(string productName)
         {
             var products = await _context.products
                .Where(p => p.Name == productName)
@@ -93,20 +92,19 @@ namespace MyShopProjectBackend.Servises
 
             if (products == null || !products.Any())
             {
-                return (false, "Товари не знайдено", new List<ProductDto>());
+                throw new NotFoundException("Товари не знайдено з таким іменем");
             }
-
-            return (true, null, products);
+            return products;
         }
 
 
-        public async Task<(bool Success, string? ErrorMessage, List<ProductDto> Products)> GetProductsByShopAsync(int shopId)
+        public async Task<List<ProductDto>> GetProductsByShopAsync(int shopId)
         {
             var shop = await _context.shops.FindAsync(shopId);
 
             if (shop == null)
             {
-                return (false,"Магазин не знайдено", new List<ProductDto>());
+                throw new NotFoundException("Магазин не знайдено");
             }
 
             var products = await _context.products.Where(p => p.ShopId == shopId).Select(p => new ProductDto
@@ -122,25 +120,25 @@ namespace MyShopProjectBackend.Servises
                 ImageMimeType = p.ImageMimeType
             }).ToListAsync();
 
-            return (true,null,products);
+            return products;
         }
 
-        public async Task<(bool Success, string? ErrorMessage)> UpdateProductAsync(UpdateProductModel model)
+        public async Task UpdateProductAsync(UpdateProductModel model)
         {
             var product = await _context.products.FindAsync(model.ProductId);// Отримання товару за його ID
             if (product == null)
             {
-                return (false, "Товар не знайдено");
+                throw new NotFoundException("Товар не знайдено");
             }
             var shop = await _context.shops.FindAsync(product.ShopId);// Отримання магазину, до якого належить товар
             if (shop == null)
             {
-                return (false, "Магазин товару не знайдено");
+                throw new NotFoundException("Магазин товару не знайдено");
             }
 
             if (shop.OwnerId != model.OwnerId)
             {
-                return (false,"Ви не маєте права редагувати товар з чужого магазину");
+                throw new AuthorizationException("Ви не маєте права редагувати товар з чужого магазину");
             }
 
             product.Name = model.Name;
@@ -151,9 +149,7 @@ namespace MyShopProjectBackend.Servises
             product.ImageData = model.ImageData;
             product.ImageMimeType = model.ImageMimeType;
 
-            await _context.SaveChangesAsync();// Збереження змін у базі даних
-
-            return (true, null);
+            await _context.SaveChangesAsync();
         }
     }
 }

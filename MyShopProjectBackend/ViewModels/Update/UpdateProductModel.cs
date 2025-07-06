@@ -1,8 +1,8 @@
-﻿namespace MyShopProjectBackend.ViewModels
+﻿namespace MyShopProjectBackend.ViewModels.Update
 {
     public class UpdateProductModel
     {
-        public int OwnerId { get; set; }
+        public string OwnerId { get; set; }
         public int ProductId { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }

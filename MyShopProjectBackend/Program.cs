@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MyShopProjectBackend.Db;
+using MyShopProjectBackend.Middleware;
 using MyShopProjectBackend.Models;
 using MyShopProjectBackend.Servises;
 using MyShopProjectBackend.Servises.Interface;
@@ -136,6 +137,8 @@ namespace MyShopProjectBackend
                 app.UseSwaggerUI();
                 app.MapOpenApi();
             }
+
+            app.UseMiddleware<CustomExceptionHandlerMiddleware>();
 
             app.UseHttpsRedirection();
 

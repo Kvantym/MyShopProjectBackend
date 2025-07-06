@@ -1,12 +1,13 @@
 ﻿using MyShopProjectBackend.Models;
-using MyShopProjectBackend.ViewModels;
+using MyShopProjectBackend.ViewModels.Add;
+using MyShopProjectBackend.ViewModels.Remove;
 
 namespace MyShopProjectBackend.Servises.Interface
 {
     public interface IFavoriteServises
     {
-        public Task<(bool Success, string? ErrorMessage)> AddToFavoritesAsync(AddFavoritModel model);
-        public Task<(bool Success, string? ErrorMessage)> RemoveFromFavoritesAsync(RemoveFavoritModel model);
-        public Task<(bool Success, string? ErrorMessage, List<FavouriteProduct> FavoriteProducts)> GetFavoritesAsync(int userId);
+        public Task AddToFavoritesAsync(AddFavoritModel model);
+        public Task RemoveFromFavoritesAsync(RemoveFavoritModel model);
+        public Task <List<FavouriteProduct>> GetFavoritesAsync(string userId);
     }
 }

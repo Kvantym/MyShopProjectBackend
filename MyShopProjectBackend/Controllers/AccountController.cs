@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MyShopProjectBackend.Exceptions;
 using MyShopProjectBackend.Models;
 using MyShopProjectBackend.Servises.Interface;
-using MyShopProjectBackend.ViewModels;
+using MyShopProjectBackend.ViewModels.Login;
+using MyShopProjectBackend.ViewModels.Register;
 
 namespace MyShopProjectBackend.Controllers
 {
@@ -26,37 +28,22 @@ namespace MyShopProjectBackend.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginModel loginModel)
         {
-           var result = await _accountService.LoginAsync(loginModel);
-            if (!result.Success)
-            {
-                return BadRequest(result.ErrorMessage);
-            }
-            return Ok(new { token = result.token });
+            var result = await _accountService.LoginAsync(loginModel);
+            return Ok(new { token = result });
         }
 
         [HttpPost("RegisterCustomer")]
         public async Task<IActionResult> RegisterCustomer([FromBody] RegisterUserModel model)
         {
-           var result = await _accountService.RegisterUserAsync(model, UserRole.Customer);
-            if (!result.Success)
-            {
-                return BadRequest(result.ErrorMessage);
-            }
-            return Ok(new { message = "Користувач зареєстрований" });
+            var result = await _accountService.RegisterUserAsync(model, UserRole.Customer);
+            return Ok(result);
         }
 
-    
-
         [HttpPost("RegisterSeller")]
-        public async Task<IActionResult> RegisterSeller([FromBody] RegisterUserModel loginModel)
+        public async Task<IActionResult> RegisterSeller([FromBody] RegisterUserModel model)
         {
-            var result = await _accountService.RegisterUserAsync(loginModel, UserRole.Seller);
-            if (!result.Success)
-            {
-                return BadRequest(result.ErrorMessage);
-            }
-            return Ok(new { message = "Продавець зареєстрований" });
-
+            var result = await _accountService.RegisterUserAsync(model, UserRole.Seller);
+            return Ok(result);
         }
 
         [HttpPost("Logout")]
@@ -71,12 +58,7 @@ namespace MyShopProjectBackend.Controllers
         public async Task<IActionResult> GetCurrentUser()
         {
             var result = await _accountService.GetCurrentUserAsync();
-            if (!result.Success)
-            {
-                return BadRequest(result.ErrorMessage);
-            }
-            return Ok(result.userDto);
-
-        } 
+            return Ok(result);
+        }
     }
 }

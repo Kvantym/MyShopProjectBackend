@@ -1,8 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MyShopProjectBackend.Db;
+using MyShopProjectBackend.Exceptions;
 using MyShopProjectBackend.Models;
 using MyShopProjectBackend.Servises.Interface;
-using MyShopProjectBackend.ViewModels;
+using MyShopProjectBackend.ViewModels.Add;
+using MyShopProjectBackend.ViewModels.Remove;
 
 namespace MyShopProjectBackend.Servises
 {
@@ -14,20 +16,20 @@ namespace MyShopProjectBackend.Servises
         {
             _context = context;
         }
-        public async Task<(bool Success, string? ErrorMessage)> AddToFavoritesAsync(AddFavoritModel model)
+        public async Task AddToFavoritesAsync(AddFavoritModel model)
         {
             var product = await _context.products.FindAsync(model.ProductId);
 
             if (product == null)
             {
-                return (false,"Товару не існує");
+                throw new BadRequestException($"Товар з ID{model.ProductId} не знайдено"); 
             }
 
             bool alreadyExists = await _context.favoritProducts.AnyAsync(fp => fp.UserId == model.UserId && fp.ProductId == model.ProductId);
 
             if (alreadyExists)
             {
-                return (false, "Товар вже додано до обраного");
+                throw new BadRequestException("Товар вже додано до обраного");
             }
 
             var favoritProduct = new FavouriteProduct
@@ -38,41 +40,37 @@ namespace MyShopProjectBackend.Servises
 
             _context.favoritProducts.Add(favoritProduct);
             await _context.SaveChangesAsync();
-
-            return (true,null);
         }
 
-        public async Task<(bool Success, string? ErrorMessage, List<FavouriteProduct> FavoriteProducts)> GetFavoritesAsync(int userId)
+        public async Task<List<FavouriteProduct>> GetFavoritesAsync(string userId)
         {
             var favoritProducts = await _context.favoritProducts.Include(fp => fp.Product).Where(fp => fp.UserId == userId).ToListAsync();
 
             if (!favoritProducts.Any())
             {
-                return (false, "Немає улюблених продуктів", new List<FavouriteProduct>());
+                throw new NotFoundException("Немає улюблених продуктів для цього користувача");
             }
-            return (true, null, favoritProducts);
+            return favoritProducts;
         }
 
-        public async Task<(bool Success, string? ErrorMessage)> RemoveFromFavoritesAsync(RemoveFavoritModel model)
+        public async Task RemoveFromFavoritesAsync(RemoveFavoritModel model)
         {
             var product = await _context.products.FindAsync(model.ProductId);
 
             if (product == null)
             {
-                return  (false,"Неправельне ID товару");
+                throw new BadRequestException($"Товар з ID {model.ProductId} не знайдено");
             }
 
             var favoritProduct = await _context.favoritProducts.FirstOrDefaultAsync(fp => fp.UserId == model.UserId && fp.ProductId == model.ProductId);
 
             if (favoritProduct == null)
             {
-                return (false, "Цей товар не знайдено в обраному");
+                throw new NotFoundException("Цей товар не знайдено в обраному");
             }
 
             _context.favoritProducts.Remove(favoritProduct);
             await _context.SaveChangesAsync();
-
-            return (true,null);
         }
     }
 }

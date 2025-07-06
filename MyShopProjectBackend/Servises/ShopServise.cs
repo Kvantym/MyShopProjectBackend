@@ -2,9 +2,12 @@
 using Microsoft.EntityFrameworkCore;
 using MyShopProjectBackend.Db;
 using MyShopProjectBackend.DTO;
+using MyShopProjectBackend.Exceptions;
 using MyShopProjectBackend.Models;
 using MyShopProjectBackend.Servises.Interface;
-using MyShopProjectBackend.ViewModels;
+using MyShopProjectBackend.ViewModels.Create;
+using MyShopProjectBackend.ViewModels.Delete;
+using MyShopProjectBackend.ViewModels.Update;
 
 namespace MyShopProjectBackend.Servises
 {
@@ -18,61 +21,56 @@ namespace MyShopProjectBackend.Servises
             _context = context;
             _userManager = userManager;
         }
-        public async Task<(bool Success, string? ErrorMessage)> CreateShopAsync(CreateShopModel model)
+        public async Task CreateShopAsync(CreateShopModel model)
         {
             var user = await _userManager.FindByIdAsync(model.OwnerId.ToString());
 
             if (user == null)
             {
-                return (false, "Користувача не знайдено");
+                throw new NotFoundException("Користувача не знайдено");
             }
 
-            // Перевірка, чи користувач має роль "Seller"
             var isSeller = await _userManager.IsInRoleAsync(user, "Seller");
             if (!isSeller)
             {
-                return (false, "Ви не зареєстровані як продавець");
+                throw new AuthorizationException("Ви не зареєстровані як продавець");
             }
 
             var shop = new Models.Shop
             {
                 Name = model.Name,
                 Description = model.Description,
-                OwnerId = int.Parse(user.Id)
+                OwnerId = user.Id
             };
 
             await _context.shops.AddAsync(shop);
             await _context.SaveChangesAsync();
-
-            return (true, null);
         }
 
 
-        public async Task<(bool Success, string? ErrorMessage)> DeleteShopAsync(DeleteShopModel model)
+        public async Task DeleteShopAsync(DeleteShopModel model)
         {
             var shop = await _context.shops.FindAsync(model.ShopId);
             if (shop == null)
             {
-                return (false, "Магазин не знайдено");
+                throw new NotFoundException("Магазин не знайдено");
             }
 
             if (shop.OwnerId != model.OwnerId)
             {
-                return (false,"Ви не маєте права видалити цей магазин");
+                throw new BadRequestException("Ви не маєте права видалити цей магазин");
             }
 
             _context.shops.Remove(shop);
             await _context.SaveChangesAsync();
-
-            return (true,null);
         }
 
-        public async Task<(bool Success, string? ErrorMessage, List<ShopDto> Shops)> GetAllShopsAsync(int OwnerId)
+        public async Task<List<ShopDto>> GetAllShopsAsync(string OwnerId)
         {
             var shops = await _context.shops.Where(s => s.OwnerId == OwnerId).ToListAsync();
             if (shops == null || !shops.Any())
             {
-                return (false, "Магазини не знайдено", new List<ShopDto>());
+                throw new NotFoundException("Магазини не знайдено");
             }
 
             var shopDtos = shops.Select(s => new ShopDto
@@ -83,16 +81,16 @@ namespace MyShopProjectBackend.Servises
                 
             }).ToList();
 
-            return (true, null, shopDtos);
+            return shopDtos;
         }
 
-        public async Task<(bool Success, string? ErrorMessage, ShopDto? Shop)> GetShopByIdAsync(int shopId)
+        public async Task<ShopDto?> GetShopByIdAsync(int shopId)
         {
             var shop = await _context.shops.FindAsync(shopId);
 
             if (shop == null)
             {
-                return (false,"Магазин не знайдено", null);
+                throw new NotFoundException("Магазин не знайдено");
             }
             var shopDto = new ShopDto
             {
@@ -101,29 +99,27 @@ namespace MyShopProjectBackend.Servises
                 Description = shop.Description,
             };
 
-            return (true,null, shopDto) ;
+            return shopDto ;
         }
 
-        public async Task<(bool Success, string? ErrorMessage)> UpdateShopAsync(UpdateShopModel model)
+        public async Task UpdateShopAsync(UpdateShopModel model)
         {
             var shop = await _context.shops.FindAsync(model.ShopId);
 
             if (shop == null)
             {
-                return (false, "Магазин не знайдено");
+                throw new NotFoundException("Магазин не знайдено");
             }
 
             if (shop.OwnerId != model.OwnerId)
             {
-                return (false,"Ви не маєте прав змінювати цей магазин");
+                throw new BadRequestException("Ви не маєте прав змінювати цей магазин");
             }
 
             shop.Name = model.Name;
             shop.Description = model.Description;
 
             await _context.SaveChangesAsync();
-
-            return (true,null);
         }
     }
 }

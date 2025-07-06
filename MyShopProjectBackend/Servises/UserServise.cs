@@ -2,9 +2,10 @@
 using Microsoft.EntityFrameworkCore;
 using MyShopProjectBackend.Db;
 using MyShopProjectBackend.DTO;
+using MyShopProjectBackend.Exceptions;
 using MyShopProjectBackend.Models;
 using MyShopProjectBackend.Servises.Interface;
-using MyShopProjectBackend.ViewModels;
+using MyShopProjectBackend.ViewModels.Update;
 
 namespace MyShopProjectBackend.Servises
 {
@@ -18,30 +19,28 @@ namespace MyShopProjectBackend.Servises
             _context = context;
             _userManager = userManager;
         }
-        public async Task<(bool Success, string? ErrorMessage)> DeleteUserAsync(int userId)
+        public async Task DeleteUserAsync(string userId)
         {
             var user = await _userManager.FindByIdAsync(userId.ToString());
             if (user == null)
             {
-                return (false,"Користувача не знайдено");
+                throw new NotFoundException("Користувача не знайдено");
             }
             var result = await _userManager.DeleteAsync(user);
             if (!result.Succeeded)
             {
-                // Тут можна повернути помилки result.Errors
-                return (false, "Не вдалося видалити користувача");
+                throw new BadRequestException("Не вдалося видалити користувача: " + string.Join("; ", result.Errors.Select(e => e.Description)));
             }
             await _context.SaveChangesAsync();
-            return (true, null);
         }
 
-        public async Task<(bool Success, string? ErrorMessage, List<UserDto> Users)> GetAllUsersAsync()
+        public async Task<List<UserDto>> GetAllUsersAsync()
         {
             var users = await _userManager.Users.ToListAsync();
 
             if (users == null || !users.Any())
             {
-                return (false, "Користувачів не знайдено", new List<UserDto>());
+                throw new NotFoundException("Користувачів не знайдено");
             }
 
             var userDtos = new List<UserDto>();
@@ -51,33 +50,31 @@ namespace MyShopProjectBackend.Servises
                 var roles = await _userManager.GetRolesAsync(user);
                 userDtos.Add(new UserDto
                 {
-                   
                     UserName = user.UserName,
                     Email = user.Email,
-                    Role = roles.FirstOrDefault() ?? "No role" // Якщо потрібно — можна повернути всі ролі, а не одну
+                    Role = roles.FirstOrDefault()
                 });
             }
 
-            return (true, null, userDtos);
+            return userDtos;
         }
 
-
-        public async Task<(bool Success, string? ErrorMessage, ApplicationUser? user)> GetUserByIdAsync(int userId)
+        public async Task<ApplicationUser?> GetUserByNameAsync(string userName)
         {
-            var user = await _userManager.FindByIdAsync(userId.ToString());
+            var user = await _userManager.FindByNameAsync(userName);
             if (user == null)
             {
-                return (false, "Користувача не знайдеено",null);
+                throw new NotFoundException("Користувача не знайдено");
             }
-            return (true, null,user);
-          }
+            return user;
+        }
 
-        public async Task<(bool Success, string? ErrorMessage)> UpdateUserAsync(UpdateUserModel model, string? oldPassword = null)
+        public async Task UpdateUserAsync(UpdateUserModel model, string? oldPassword = null)
         {
             var user = await _userManager.FindByIdAsync(model.UserId.ToString());
             if (user == null)
             {
-                return (false, "Користувача не знайдено");
+                throw new NotFoundException("Користувача не знайдено");
             }
 
             user.UserName = model.Name;
@@ -86,33 +83,29 @@ namespace MyShopProjectBackend.Servises
             var updateResult = await _userManager.UpdateAsync(user);
             if (!updateResult.Succeeded)
             {
-                return (false, string.Join("; ", updateResult.Errors.Select(e => e.Description)));
+                throw new BadRequestException("Не вдалося оновити користувача: " + string.Join("; ", updateResult.Errors.Select(e => e.Description)));
             }
 
             if (!string.IsNullOrEmpty(model.Password))
             {
                 if (oldPassword == null)
                 {
-                    // Якщо старий пароль не передано, можна скинути пароль адміністратором (не безпечно, якщо без підтвердження)
                     var token = await _userManager.GeneratePasswordResetTokenAsync(user);
                     var resetResult = await _userManager.ResetPasswordAsync(user, token, model.Password);
                     if (!resetResult.Succeeded)
                     {
-                        return (false, string.Join("; ", resetResult.Errors.Select(e => e.Description)));
+                        throw new BadRequestException("Не вдалося оновити користувача: " + string.Join("; ", resetResult.Errors.Select(e => e.Description)));
                     }
                 }
                 else
                 {
-                    // Зміна пароля з вказаним старим паролем
                     var changeResult = await _userManager.ChangePasswordAsync(user, oldPassword, model.Password);
                     if (!changeResult.Succeeded)
                     {
-                        return (false, string.Join("; ", changeResult.Errors.Select(e => e.Description)));
+                        throw new BadRequestException("Не вдалося оновити користувача: " + string.Join("; ", changeResult.Errors.Select(e => e.Description)));
                     }
                 }
             }
-
-            return (true, null);
         }
 
     }

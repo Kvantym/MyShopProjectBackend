@@ -10,7 +10,7 @@ namespace MyShopProjectBackend.Models
 		[Required]
 		public string Name { get; set; } = string.Empty; // Назва магазину
         public string Description { get; set; } = string.Empty; // Опис магазину
-        public int OwnerId { get; set; } // Ідентифікатор власника магазину (користувача)
+        public string OwnerId { get; set; } // Ідентифікатор власника магазину (користувача)
        
        // public User User { get; set; }  // Власник магазину (користувач)
 

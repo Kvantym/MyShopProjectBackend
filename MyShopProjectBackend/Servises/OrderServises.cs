@@ -2,9 +2,10 @@
 using Microsoft.EntityFrameworkCore;
 using MyShopProjectBackend.Db;
 using MyShopProjectBackend.DTO;
+using MyShopProjectBackend.Exceptions;
 using MyShopProjectBackend.Models;
 using MyShopProjectBackend.Servises.Interface;
-using MyShopProjectBackend.ViewModels;
+using MyShopProjectBackend.ViewModels.Update;
 
 namespace MyShopProjectBackend.Servises
 {
@@ -18,52 +19,50 @@ namespace MyShopProjectBackend.Servises
             _context = context;
             _userManager = userManager;
         }
-        public Task<(bool Success, string? ErrorMessage)> CreateOrderAsync(int userId, List<OrderItemDto> orderItems)
+        public Task CreateOrderAsync(string userId, List<OrderItemDto> orderItems)
         {
             throw new NotImplementedException();
         }
 
-        public async Task<(bool Success, string? ErrorMessage)> DeleteOrderAsync(int orderId, int sellerId)
+        public async Task DeleteOrderAsync(int orderId, string sellerId)
         {
             var order = await _context.orders.Include(o => o.OrderItems)
                 .ThenInclude(oi => oi.Product).ThenInclude(p => p.Shop)
                 .FirstOrDefaultAsync(o => o.Id == orderId);
             if (order == null)
             {
-                return (false,"Замовлення не знайдено");
+                throw new NotFoundException("Замовлення не знайдено");
             }
 
             bool isSellerOwner = order.OrderItems.Any(oi => oi.Product.Shop.OwnerId == sellerId);
             if (!isSellerOwner)
             {
-                return (false, "Ви не маєте доступу до цього замовлення");
+                throw new AuthorizationException("Ви не маєте доступу до цього замовлення");
             }
 
             var orderItems = await _context.orderItems.Where(oi => oi.OrderId == orderId).ToListAsync();
             _context.orderItems.RemoveRange(orderItems);
             _context.orders.Remove(order);
             await _context.SaveChangesAsync();
-
-            return (true, null);
         }
-        public async Task<(bool Success, string? ErrorMessage, List<OrderDto> Orders)> GetAllOrdersAsync(int shopId, int sellerId)
+        public async Task<List<OrderDto>> GetAllOrdersAsync(int shopId, string sellerId)
         {
             var user = await _userManager.FindByIdAsync(sellerId.ToString());
             if (user == null)
             {
-                return (false, "Користувача не знайдено", new List<OrderDto>());
+                throw new NotFoundException("Користувача не знайдено");
             }
 
             var roles = await _userManager.GetRolesAsync(user);
             if (!roles.Contains("Seller"))
             {
-                return (false, "Користувач не є продавцем", new List<OrderDto>());
+                throw new AuthorizationException("Можна тільки продавцю");
             }
 
             var shop = await _context.shops.FindAsync(shopId);
             if (shop == null || shop.OwnerId != sellerId)
             {
-                return (false, "Магазин не знайдено або ви не є його власником", new List<OrderDto>());
+                throw new NotFoundException("Магазин не знайдено або ви не є його власником");
             }
 
             var orders = await _context.orders
@@ -75,15 +74,14 @@ namespace MyShopProjectBackend.Servises
 
             if (!orders.Any())
             {
-                return (false, "Замовлення не знайдено", new List<OrderDto>());
+                throw new NotFoundException("Замовлення не знайдено для цього магазину");
             }
 
             var orderDtos = GetOrderDtos(orders);
-
-            return (true, null, orderDtos);
+            return orderDtos;
         }
 
-        public async Task<(bool Success, string? ErrorMessage, OrderDto? Order)> GetOrderByIdAsync(int orderId, int sellerId)
+        public async Task<OrderDto?> GetOrderByIdAsync(int orderId, string sellerId)
         {
             var order = await _context.orders
                 .Include(o => o.OrderItems)
@@ -92,20 +90,27 @@ namespace MyShopProjectBackend.Servises
                 .FirstOrDefaultAsync(o => o.Id == orderId);
 
             if (order == null)
-                return (false, "Замовлення не знайдено", null);
+            {
+                throw new NotFoundException("Замовлення не знайдено");
+            }
 
             var seller = await _userManager.FindByIdAsync(sellerId.ToString());
             if (seller == null)
-                return (false, "Користувача не знайдено", null);
+            {
+                throw new NotFoundException("Користувача не знайдено");
+            }
 
-            // Отримуємо ролі користувача
             var roles = await _userManager.GetRolesAsync(seller);
             if (!roles.Contains("Seller"))
-                return (false, "Можна тільки продавцю", null);
+            {
+                throw new AuthorizationException("Можна тільки продавцю");
+            }
 
             bool isSellerOwner = order.OrderItems.Any(oi => oi.Product.Shop.OwnerId == sellerId);
             if (!isSellerOwner)
-                return (false, "Ви не маєте доступу до цього замовлення", null);
+            {
+                throw new AuthorizationException("Ви не маєте доступу до цього замовлення");
+            }
 
             var orderDto = new OrderDto
             {
@@ -120,32 +125,31 @@ namespace MyShopProjectBackend.Servises
                 }).ToList()
             };
 
-            return (true, null, orderDto);
+            return orderDto;
         }
 
-        public async Task<(bool Success, string? ErrorMessage, List<OrderDto> Orders)> GetOrdersForUserAsync(int buyerId, int sellerId)
+        public async Task<List<OrderDto>> GetOrdersForUserAsync(string buyerName, string sellerId)
         {
-            var buyer = await _userManager.FindByIdAsync(buyerId.ToString());
+            var buyer = await _userManager.FindByNameAsync(buyerName);
             if (buyer == null)
             {
-                return (false, "Покупця не знайдено", new List<OrderDto>());
+                throw new NotFoundException("Покупця не знайдено");
             }
 
-            var seller = await _userManager.FindByIdAsync(sellerId.ToString());
+            var seller = await _userManager.FindByIdAsync(sellerId);
             if (seller == null)
             {
-                return (false, "Продавця не знайдено", new List<OrderDto>());
+                throw new NotFoundException("Продавця не знайдено");
             }
 
-            // Отримуємо ролі продавця
             var roles = await _userManager.GetRolesAsync(seller);
             if (!roles.Contains("Seller"))
             {
-                return (false, "Можна тільки продавцю", new List<OrderDto>());
+                throw new AuthorizationException("Можна тільки продавцю");
             }
 
             var orders = await _context.orders
-                .Where(o => o.BuyerId == buyerId)
+                .Where(o => o.BuyerId == buyer.Id)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Product)
                         .ThenInclude(p => p.Shop)
@@ -155,12 +159,10 @@ namespace MyShopProjectBackend.Servises
 
             if (orders == null || !orders.Any())
             {
-                return (false, "Замовлення не знайдено для цього користувача", new List<OrderDto>());
+                throw new NotFoundException("Замовлення не знайдено для цього користувача");
             }
-
             var orderDtos = GetOrderDtos(orders);
-
-            return (true, null, orderDtos);
+            return orderDtos;
         }
 
         private List<OrderDto> GetOrderDtos(List<Order> orders)
@@ -178,19 +180,18 @@ namespace MyShopProjectBackend.Servises
                 }).ToList()
             }).ToList();
         }
-        public async Task<(bool Success, string? ErrorMessage)> UpdateOrderStatusAsync(UpdateOrderModel model)
+        public async Task UpdateOrderStatusAsync(UpdateOrderModel model)
         {
             var user = await _userManager.FindByIdAsync(model.SellerId.ToString());
             if (user == null)
             {
-                return (false, "Користувача не знайдено");
+                throw new NotFoundException("Користувача не знайдено");
             }
 
-            // Перевірка ролі через IsInRoleAsync
             var isSeller = await _userManager.IsInRoleAsync(user, "Seller");
             if (!isSeller)
             {
-                return (false, "Доступ дозволено лише продавцям");
+                throw new AuthorizationException("Доступ дозволено лише продавцям");
             }
 
             var order = await _context.orders
@@ -200,14 +201,13 @@ namespace MyShopProjectBackend.Servises
 
             if (order == null)
             {
-                return (false, "Замовлення не знайдено");
+                throw new NotFoundException("Замовлення не знайдено");
             }
 
-            // Перевірка, що продавець є власником хоча б одного товару в замовленні
             bool isSellerOwner = order.OrderItems.Any(oi => oi.Product.Shop.OwnerId == model.SellerId);
             if (!isSellerOwner)
             {
-                return (false, "Ви не маєте доступу до цього замовлення");
+                throw new AuthorizationException("Ви не маєте доступу до цього замовлення");
             }
 
             var validStatuses = new[]
@@ -224,22 +224,17 @@ namespace MyShopProjectBackend.Servises
 
             if (!validStatuses.Contains(model.Status))
             {
-                return (false, "Невірний статус");
+                throw new BadRequestException("Невірний статус замовлення");
             }
 
-            // Перевірка, чи замовлення вже завершене або скасоване
             if (order.Status == ShopOrderStatus.Completed.ToString() ||
                 order.Status == ShopOrderStatus.Cancelled.ToString())
             {
-                return (false, "Замовлення вже завершено або скасовано");
+                throw new BadRequestException("Замовлення вже завершено або скасовано");
             }
-
-            // Оновлення статусу (зберігаємо рядок від enum)
             order.Status = model.Status.ToString();
 
             await _context.SaveChangesAsync();
-
-            return (true, null);
         }
 
     }

@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MyShopProjectBackend.Extensions;
 using MyShopProjectBackend.Servises.Interface;
-using MyShopProjectBackend.ViewModels;
+using MyShopProjectBackend.ViewModels.Update;
 using System.Security.Claims;
 
 namespace MyShopProjectBackend.Controllers
@@ -24,66 +25,34 @@ namespace MyShopProjectBackend.Controllers
         }
 
         [HttpGet("GetUserById")]
-        public async Task<IActionResult> GetUserById(int userId)
+        public async Task<IActionResult> GetUserById(string userName)
         {
-            var result = await _userServise.GetUserByIdAsync(userId);
-            if (!result.Success)
-            {
-                return BadRequest(result.ErrorMessage);
-            }
-            return Ok(result.user);
+            var result = await _userServise.GetUserByNameAsync(userName);
+            return Ok(result);
         }
+
         [Authorize]
         [HttpPost("UpdateUser")]
         public async Task<IActionResult> UpdateUser([FromBody] UpdateUserModel model)
         {
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim))
-            {
-                return Unauthorized("Користувач не авторизований");
-            }
-
-            model.UserId = int.Parse(userIdClaim);
-            var result = await _userServise.UpdateUserAsync(model);
-            if (!result.Success)
-            {
-                return BadRequest(result.ErrorMessage);
-            }
+            model.UserId = User.GetUserId();
+            var result = _userServise.UpdateUserAsync(model);
 
             return Ok(new { message = "Користувача оновлено успішно" });
         }
+
         [HttpGet("GetAllUsers")]
         public async Task<IActionResult> GetAllUsers()
         {
-
             var result = await _userServise.GetAllUsersAsync();
-            if (!result.Success)
-            {
-                return BadRequest(result.ErrorMessage);
-            }
-            return Ok(result.Users);
+            return Ok(result);
         }
 
         [Authorize]
         [HttpPost("DeleteUser")]
         public async Task<IActionResult> DeleteUser()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userIdClaim == null || !int.TryParse(userIdClaim, out int userId))
-            {
-                return Unauthorized("Невірний ідентифікатор користувача");
-            }
-            var resualt = await _userServise.DeleteUserAsync(userId);
-            if (!resualt.Success)
-            {
-                return BadRequest(resualt.ErrorMessage);
-            }
+            var resualt = _userServise.DeleteUserAsync(User.GetUserId());
             return Ok(new { message = "Користувача видалено успішно" });
         }
 

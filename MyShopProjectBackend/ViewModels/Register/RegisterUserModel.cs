@@ -1,4 +1,4 @@
-﻿namespace MyShopProjectBackend.ViewModels
+﻿namespace MyShopProjectBackend.ViewModels.Register
 {
     public class RegisterUserModel
     {

@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MyShopProjectBackend.Extensions;
 using MyShopProjectBackend.Servises.Interface;
-using MyShopProjectBackend.ViewModels;
-using System.Security.Claims;
+using MyShopProjectBackend.ViewModels.Create;
+using MyShopProjectBackend.ViewModels.Delete;
+using MyShopProjectBackend.ViewModels.Update;
 
 namespace MyShopProjectBackend.Controllers
 {
@@ -15,7 +17,6 @@ namespace MyShopProjectBackend.Controllers
         {;
             _productServises = productServises;
         }
-
         [HttpGet]
         public ActionResult Index()
         {
@@ -25,25 +26,8 @@ namespace MyShopProjectBackend.Controllers
         [HttpPost("AddProduct")]
         public async Task<IActionResult> AddProduct([FromBody] CreateProductModel model)
         {
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-            var userIdClime = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
-
-            if (userIdClime == null || !int.TryParse(userIdClime.Value, out int userId))
-            {
-                return Unauthorized("Invalid user identity");
-            }
-
-            model.OwnerId = userId; // Прив'язка ID користувача до моделі
-
-            var result = await _productServises.AddProductAsync(model); // Виклик сервісу для додавання товару
-            if (!result.Success)
-            {
-                return BadRequest(result.ErrorMessage); // Повернення помилки, якщо додавання не вдалось
-            }
+            model.OwnerId = User.GetUserId();
+            var result =  _productServises.AddProductAsync(model);
 
             return Ok(new { message = "Товар успішно додано" });
         }
@@ -52,23 +36,8 @@ namespace MyShopProjectBackend.Controllers
         [HttpPost]
         public async Task<IActionResult> UpdateProduct([FromBody] UpdateProductModel model)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-            var userIdClime = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);// Отримання ID користувача з клеймів 
-
-            if (userIdClime == null || !int.TryParse(userIdClime.Value, out int userId))// Перевірка, чи є користувач авторизованим
-            {
-                return Unauthorized("Invalid user identity");
-            }
-            model.OwnerId = userId; // Прив'язка ID користувача до моделі
-
-            var result = await _productServises.UpdateProductAsync(model);// Виклик сервісу для оновлення товару
-            if (!result.Success)
-            {
-                return BadRequest(result.ErrorMessage);// Повернення помилки, якщо оновлення не вдалось
-            }
+            model.OwnerId = User.GetUserId(); 
+            var result = _productServises.UpdateProductAsync(model);
 
             return Ok(new { message = "Товар оновлено успішно" });
         }
@@ -77,22 +46,9 @@ namespace MyShopProjectBackend.Controllers
         [HttpPost("DeleteProduct")]
         public async Task<IActionResult> DeleteProduct(DeleteProductModel model)
         {
-            if (!ModelState.IsValid) 
-            {
-                return BadRequest(ModelState);
-            }
-            var userIdClime = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);// Отримання ID користувача з клеймів 
+            model.OwnerId = User.GetUserId();
+            var result = _productServises.DeleteProductAsync(model);
 
-            if (userIdClime == null || !int.TryParse(userIdClime.Value, out int userId))// Перевірка, чи є користувач авторизованим
-            {
-                return Unauthorized("Invalid user identity");
-            }
-            model.OwnerId = userId; // Прив'язка ID користувача до моделі
-
-            var result = await _productServises.DeleteProductAsync(model);// Виклик сервісу для видалення товару
-            if (!result.Success) { 
-            return BadRequest(result.ErrorMessage);// Повернення помилки, якщо видалення не вдалось
-            }
             return Ok(new { message = "Товар успішно видалено" });
         }
         
@@ -100,22 +56,13 @@ namespace MyShopProjectBackend.Controllers
         public async Task<IActionResult> GetProductByName(string productName)
         {
             var result = await _productServises.GetProductByNameAsync(productName);
-            if (!result.Success)
-            {
-                return BadRequest(result.ErrorMessage);
-            }
-            return Ok(result.Products);
+            return Ok(result);
         }
         [HttpGet("GetProductsByShop")]
         public async Task<IActionResult> GetProductsByShop(int shopId)
         {
            var result = await _productServises.GetProductsByShopAsync(shopId);
-            if (!result.Success)
-            {
-                return BadRequest(result.ErrorMessage);
-            }
-            return Ok(result.Products);
+            return Ok(result);
         }
-        //197
     }
 }
