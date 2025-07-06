@@ -2,8 +2,8 @@
 {
     public  class UserRole
     {
-        public const string Admin = "Admin";       // Роль адміністратора
-        public const string Seller = "Seller";     // Роль продавця
-        public const string Customer = "Customer"; // Роль покупця
+        public const string Admin = "Admin";       
+        public const string Seller = "Seller";     
+        public const string Customer = "Customer"; 
     }
 }

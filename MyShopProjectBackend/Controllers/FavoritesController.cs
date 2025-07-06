@@ -1,114 +1,54 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using MyShopProjectBackend.Db;
-using MyShopProjectBackend.Models;
+using MyShopProjectBackend.Extensions;
+using MyShopProjectBackend.Servises.Interface;
+using MyShopProjectBackend.ViewModels.Add;
+using MyShopProjectBackend.ViewModels.Remove;
 
 namespace MyShopProjectBackend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class FavoritesController : Controller
+    public class FavoritesController : ControllerBase
     {
-        private readonly AppDbConection _context;
+        private readonly IFavoriteServises _favoriteServises;
 
-        public FavoritesController(AppDbConection conection)
+        public FavoritesController(IFavoriteServises favoriteServises)
         {
-            _context = conection;
+            _favoriteServises = favoriteServises;
         }
 
         // GET: FavoritesController
         [HttpGet]
         public ActionResult Index()
         {
-            return Ok();
+            return Ok("FavoritesController Working");
         }
         [Authorize]
         [HttpPost("AddToFavorites")]
-        public async Task<IActionResult> AddToFavorites(int productId)
+        public async Task<IActionResult> AddToFavorites(AddFavoritModel model)
         {
-            var userIdClime = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-
-            if (userIdClime == null) {
-                return Unauthorized("Користувач не авторизований");
-            }
-            int userId = int.Parse(userIdClime);
-
-            var product = await _context.products.FindAsync(productId);
-
-            if(product == null)
-            {
-                return BadRequest("Товару не існує");
-            }
-
-            bool alreadyExists = await _context.favoritProducts.AnyAsync(fp => fp.UserId == userId && fp.ProductId == productId);
-
-            if (alreadyExists)
-            {
-                return BadRequest("Товар вже додано до обраного");
-            }
-
-            var favoritProduct = new FavoritProduct { 
-            UserId = userId,
-            ProductId = productId,
-            };
-
-            _context.favoritProducts.Add(favoritProduct);
-            await _context.SaveChangesAsync();
-
-            return Ok();
+            model.UserId = User.GetUserId();
+            var result =  _favoriteServises.AddToFavoritesAsync(model);
+           
+            return Ok(new { message = "Товар успішно додано до обраного" });
         }
 
         [Authorize]
         [HttpPost("RemoveFromFavorites")]
-        public async Task<IActionResult> RemoveFromFavorites(int productId)
+        public async Task<IActionResult> RemoveFromFavorites(RemoveFavoritModel model)
         {
-            var userIdClime = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (userIdClime == null)
-            {
-                return Unauthorized("Користувач не авторизований");
-            }
-            int userId = int.Parse(userIdClime);
-
-            var product = await _context.products.FindAsync(productId);
-
-            if (product == null)
-            {
-                return BadRequest("Неправельне ID товару");
-            }
-
-            var favoritProduct = await _context.favoritProducts.FirstOrDefaultAsync(fp => fp.UserId == userId&& fp.ProductId == productId);
-
-            if (favoritProduct == null)
-            {
-                return NotFound("Цей товар не знайдено в обраному");
-            }
-
-            _context.favoritProducts.Remove(favoritProduct);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Успішно видалено з улюбленого"});
+            model.UserId = User.GetUserId();
+            var result =  _favoriteServises.RemoveFromFavoritesAsync(model);
+            
+            return Ok(new { message = "Товар успішно видалено з обраного" });
         }
         [Authorize]
         [HttpGet("GetFavoritesByUser")]
         public async Task<IActionResult> GetFavoritesByUser()
         {
-            var userIdClime = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (userIdClime == null)
-            {
-                return Unauthorized("Користувач не авторизований");
-            }
-            int userId = int.Parse(userIdClime);
-
-            var favoritProducts = await _context.favoritProducts.Include(fp=> fp.Product).Where(fp=> fp.UserId == userId).ToListAsync();
-
-            if (!favoritProducts.Any())
-            {
-                return NotFound("Немає улюблених продуктів");
-            }
-            return Ok(favoritProducts);
-
+            var result = await _favoriteServises.GetFavoritesAsync(User.GetUserId());
+            return Ok(result);
         }
     }
 }
