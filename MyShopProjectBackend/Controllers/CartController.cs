@@ -1,15 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MyShopProjectBackend.Extensions;
+using MyShopProjectBackend.Models.Cart;
 using MyShopProjectBackend.Servises.Interface;
-using MyShopProjectBackend.ViewModels.Add;
-using MyShopProjectBackend.ViewModels.Remove;
-using MyShopProjectBackend.ViewModels.Update;
 
 namespace MyShopProjectBackend.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/cart")]
     public class CartController : ControllerBase
     {
 
@@ -20,56 +18,53 @@ namespace MyShopProjectBackend.Controllers
         {
             _cartServises = cartServises;
         }
+        [HttpGet("status")]
+        public IActionResult Get() => Ok("API працює");//готово
+
         [Authorize]
-        [HttpGet("GetCart")]
-        public async Task<IActionResult> GetCart()
+        [HttpGet]
+        public async Task<IActionResult> GetCart()//готово
         {
             var result = await _cartServises.GetCartAsync(User.GetUserId());
             return Ok(result);
         }
 
         [Authorize]
-        [HttpPost("AddToCart")]
-        public async Task<IActionResult> AddToCart(AddToCartModel model)
+        [HttpPost]
+        public async Task<IActionResult> AddToCart([FromBody]AddToCartModel model)//готово
         {
-            model.UserId = User.GetUserId();
-
-            var result = _cartServises.AddToCartAsync(model);
+            await _cartServises.AddToCartAsync(model, User.GetUserId());
             return Ok(new { message = "Товар успішно додано до кошика" });
         }
         [Authorize]
-        [HttpPost("UpdateCart")]
-        public async Task<IActionResult> UpdateCart(UpdateCartModel model)
+        [HttpPost("update-cart")]
+        public async Task<IActionResult> UpdateCart([FromBody]UpdateCartModel model)//готово
         {
-            model.UserId = User.GetUserId();
-            var result = _cartServises.UpdateCartAsync(model);
-
+            await _cartServises.UpdateCartAsync(model, User.GetUserId());
             return Ok(new { message = "Кошик успішно оновлено" });
         }
 
         [Authorize]
-        [HttpPost("RemoveFromCart")]
-        public async Task<IActionResult> RemoveFromCart(RemoveCartModel model)
+        [HttpDelete("{productId}")]
+        public async Task<IActionResult> RemoveFromCart(int productId)//готово
         {
-            model.UserId = User.GetUserId();
-
-            var result = _cartServises.RemoveFromCartAsync(model);
+            await _cartServises.RemoveFromCartAsync(productId, User.GetUserId());
             return Ok(new { message = "Товар успішно видалено з кошика" });
         }
 
         [Authorize]
-        [HttpPost("ClearCart")]
-        public async Task<IActionResult> ClearCart()
+        [HttpDelete("clear")]
+        public async Task<IActionResult> ClearCart()//готово
         {
-            var result = _cartServises.ClearCartAsync(User.GetUserId());
+            await _cartServises.ClearCartAsync(User.GetUserId());
             return Ok(new { message = "Кошик успішно очищено" });
         }
 
         [Authorize]
-        [HttpPost("Checkout")]
-        public async Task<IActionResult> Checkout()
+        [HttpPost("checkout")]
+        public async Task<IActionResult> Checkout()//готово
         {
-            var result = _cartServises.CheckoutAsync(User.GetUserId());
+            await _cartServises.CheckoutAsync(User.GetUserId());
             return Ok(new { message = "Замовлення успішно оформлено" });
         }
     }

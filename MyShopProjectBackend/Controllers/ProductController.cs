@@ -1,15 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MyShopProjectBackend.Extensions;
+using MyShopProjectBackend.Models.Product;
 using MyShopProjectBackend.Servises.Interface;
-using MyShopProjectBackend.ViewModels.Create;
-using MyShopProjectBackend.ViewModels.Delete;
-using MyShopProjectBackend.ViewModels.Update;
 
 namespace MyShopProjectBackend.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/product")]
     public class ProductController : ControllerBase
     {
         private readonly IProductServises _productServises;
@@ -17,49 +15,40 @@ namespace MyShopProjectBackend.Controllers
         {;
             _productServises = productServises;
         }
-        [HttpGet]
-        public ActionResult Index()
-        {
-            return Ok("Product Controller is working");
-        }
+        [HttpGet("status")]
+        public IActionResult Get() => Ok("API працює");//готово
         [Authorize(Roles = "Seller")]
-        [HttpPost("AddProduct")]
-        public async Task<IActionResult> AddProduct([FromBody] CreateProductModel model)
+        [HttpPost()]
+        public async Task<IActionResult> AddProduct([FromBody] CreateProductModel model)//готово
         {
-            model.OwnerId = User.GetUserId();
-            var result =  _productServises.AddProductAsync(model);
-
+            await _productServises.AddProductAsync(model, User.GetUserId());
             return Ok(new { message = "Товар успішно додано" });
         }
 
         [Authorize(Roles = "Seller")]
-        [HttpPost]
-        public async Task<IActionResult> UpdateProduct([FromBody] UpdateProductModel model)
+        [HttpPost("update")]
+        public async Task<IActionResult> UpdateProduct([FromBody] UpdateProductModel model)//готово
         {
-            model.OwnerId = User.GetUserId(); 
-            var result = _productServises.UpdateProductAsync(model);
-
+            await _productServises.UpdateProductAsync(model, User.GetUserId());
             return Ok(new { message = "Товар оновлено успішно" });
         }
 
         [Authorize(Roles = "Seller")]
-        [HttpPost("DeleteProduct")]
-        public async Task<IActionResult> DeleteProduct(DeleteProductModel model)
+        [HttpDelete("{productId}")]
+        public async Task<IActionResult> DeleteProduct(int productId)//готово
         {
-            model.OwnerId = User.GetUserId();
-            var result = _productServises.DeleteProductAsync(model);
-
+            await _productServises.DeleteProductAsync(productId, User.GetUserId());
             return Ok(new { message = "Товар успішно видалено" });
         }
         
-        [HttpGet("GetProductByName")]
-        public async Task<IActionResult> GetProductByName(string productName)
+        [HttpGet("by-name/{productName}")]
+        public async Task<IActionResult> GetProductByName(string productName)//готово
         {
             var result = await _productServises.GetProductByNameAsync(productName);
             return Ok(result);
         }
-        [HttpGet("GetProductsByShop")]
-        public async Task<IActionResult> GetProductsByShop(int shopId)
+        [HttpGet("by-shop/{shopId}")]
+        public async Task<IActionResult> GetProductsByShop(int shopId)//готово
         {
            var result = await _productServises.GetProductsByShopAsync(shopId);
             return Ok(result);

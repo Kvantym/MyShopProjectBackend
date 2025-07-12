@@ -1,13 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MyShopProjectBackend.Extensions;
+using MyShopProjectBackend.Models.Order;
 using MyShopProjectBackend.Servises.Interface;
-using MyShopProjectBackend.ViewModels.Update;
 
 namespace MyShopProjectBackend.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/order")]
     public class OrderController : ControllerBase
     {
         private readonly IOrderServises _orderServises;
@@ -16,54 +16,47 @@ namespace MyShopProjectBackend.Controllers
         {
             _orderServises = orderServises;
         }
-        [HttpGet]
-        public ActionResult Index()
-        {
-          return Ok("Order Controller is working");
-        }
+        [HttpGet("status")]
+        public IActionResult Get() => Ok("API працює");//готово
 
         [Authorize(Roles = "Seller")]
-        [HttpGet("GetOrdersForUser")]
-        public async Task<IActionResult> GetOrdersForUser(string buyerName)
+        [HttpGet("by-user")]
+        public async Task<IActionResult> GetOrdersForUser(string buyerName)//готово
         {
-            var sellerId = User.GetUserId();
-            var result = await _orderServises.GetOrdersForUserAsync(buyerName, sellerId);
-
+            var result = await _orderServises.GetOrdersForUserAsync(buyerName, User.GetUserId());
             return Ok(result);
         }
 
         [Authorize(Roles = "Seller")]
-        [HttpGet("GetOrderById")]
-        public async Task<IActionResult> GetOrderById(int orderId)
+        [HttpGet("by-Id")]
+        public async Task<IActionResult> GetOrderById(int orderId)//готово
         {
-            var result = await _orderServises.GetOrderByIdAsync(orderId, User.GetUserId()); //User.GetUserId() ID продавця);
+            var result = await _orderServises.GetOrderByIdAsync(orderId, User.GetUserId()); 
             return Ok(result);
         }
 
         [Authorize(Roles = "Seller")]
-        [HttpPost("UpdateOrderStatus")]
-        public async Task<IActionResult> UpdateOrderStatus(UpdateOrderModel model)
+        [HttpPost("update")]
+        public async Task<IActionResult> UpdateOrderStatus(UpdateOrderModel model)//готово
         {
-            model.SellerId = User.GetUserId();
-            var result = _orderServises.UpdateOrderStatusAsync(model);
-
+            await _orderServises.UpdateOrderStatusAsync(model, User.GetUserId());
             return Ok(new { message = "Статус замовлення оновлено", newStatus = model.Status });
         }
 
         [Authorize(Roles = "Seller")]
-        [HttpPost("DeleteOrder")]
-        public async Task<IActionResult> DeleteOrder(int orderId)
+        [HttpDelete("{orderId}")]
+        public async Task<IActionResult> DeleteOrder(int orderId)//готово
         {
-            var result = _orderServises.DeleteOrderAsync(orderId, User.GetUserId()); //User.GetUserId() ID продавця
+            await _orderServises.DeleteOrderAsync(orderId, User.GetUserId());
             return Ok(new { message = "Замовлення видалено" });
         }
 
         [Authorize(Roles = "Seller")]
-        [HttpGet("GetAllOrders")]
+        [HttpGet("orders")]
         public async Task<IActionResult> GetAllOrders(int shopId)
         {
-          var result = await _orderServises.GetAllOrdersAsync(shopId, User.GetUserId()); //User.GetUserId() ID продавця
+          var result = await _orderServises.GetAllOrdersAsync(shopId, User.GetUserId()); 
             return Ok(result);
         }
     }
-}//125
+}

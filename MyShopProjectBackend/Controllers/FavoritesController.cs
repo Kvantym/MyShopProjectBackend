@@ -1,14 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MyShopProjectBackend.Entities;
 using MyShopProjectBackend.Extensions;
+using MyShopProjectBackend.Models.Favorit;
 using MyShopProjectBackend.Servises.Interface;
-using MyShopProjectBackend.ViewModels.Add;
-using MyShopProjectBackend.ViewModels.Remove;
 
 namespace MyShopProjectBackend.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/favorites")]
     public class FavoritesController : ControllerBase
     {
         private readonly IFavoriteServises _favoriteServises;
@@ -18,34 +18,31 @@ namespace MyShopProjectBackend.Controllers
             _favoriteServises = favoriteServises;
         }
 
-        // GET: FavoritesController
-        [HttpGet]
-        public ActionResult Index()
-        {
-            return Ok("FavoritesController Working");
-        }
+        [HttpGet("status")]
+        public IActionResult Get() => Ok("API працює");//готово
+
         [Authorize]
-        [HttpPost("AddToFavorites")]
-        public async Task<IActionResult> AddToFavorites(AddFavoritModel model)
+        [HttpPost]
+        public async Task<IActionResult> AddToFavorites([FromBody]AddFavoritModel model)//готово
         {
-            model.UserId = User.GetUserId();
-            var result =  _favoriteServises.AddToFavoritesAsync(model);
-           
+            var userId = User.GetUserId();
+            await _favoriteServises.AddToFavoritesAsync(model, userId);
+
             return Ok(new { message = "Товар успішно додано до обраного" });
         }
 
         [Authorize]
-        [HttpPost("RemoveFromFavorites")]
-        public async Task<IActionResult> RemoveFromFavorites(RemoveFavoritModel model)
+        [HttpDelete("{productId}")]
+        public async Task<IActionResult> RemoveFromFavorites(int productId)//готово
         {
-            model.UserId = User.GetUserId();
-            var result =  _favoriteServises.RemoveFromFavoritesAsync(model);
+            var userId = User.GetUserId();
+            await  _favoriteServises.RemoveFromFavoritesAsync(productId, userId);
             
             return Ok(new { message = "Товар успішно видалено з обраного" });
         }
         [Authorize]
-        [HttpGet("GetFavoritesByUser")]
-        public async Task<IActionResult> GetFavoritesByUser()
+        [HttpGet]
+        public async Task<IActionResult> GetFavorites()//готово
         {
             var result = await _favoriteServises.GetFavoritesAsync(User.GetUserId());
             return Ok(result);

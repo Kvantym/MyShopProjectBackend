@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using MyShopProjectBackend.Models;
+using MyShopProjectBackend.Entities;
 
 namespace MyShopProjectBackend.Db
 {

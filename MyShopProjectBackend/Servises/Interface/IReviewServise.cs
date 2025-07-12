@@ -1,15 +1,13 @@
 ﻿using MyShopProjectBackend.DTO;
-using MyShopProjectBackend.ViewModels.Create;
-using MyShopProjectBackend.ViewModels.Delete;
-using MyShopProjectBackend.ViewModels.Update;
+using MyShopProjectBackend.Models.Review;
 
 namespace MyShopProjectBackend.Servises.Interface
 {
     public interface IReviewServise
     {
-        public Task AddReviewAsync(CreateReviewModel model); 
-        public Task UpdateReviewAsync(UpdateReviewModel model); 
-        public Task DeleteReviewAsync(DeleteReviewModel model); 
+        public Task AddReviewAsync(CreateReviewModel model, string userId); 
+        public Task UpdateReviewAsync(UpdateReviewModel model, string userId); 
+        public Task DeleteReviewAsync(int productId, string userId); 
         public Task<List<ReviewDto>> GetReviewsByProductAsync(int productId); 
     }
 }

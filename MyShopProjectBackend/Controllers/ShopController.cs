@@ -1,16 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MyShopProjectBackend.Extensions;
+using MyShopProjectBackend.Models.Shop;
 using MyShopProjectBackend.Servises.Interface;
-using MyShopProjectBackend.ViewModels.Create;
-using MyShopProjectBackend.ViewModels.Delete;
-using MyShopProjectBackend.ViewModels.Update;
 using System.Security.Claims;
 
 namespace MyShopProjectBackend.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/shop")]
     public class ShopController : ControllerBase
     {
         private readonly IShopServise _shopServise;
@@ -20,57 +18,47 @@ namespace MyShopProjectBackend.Controllers
             _shopServise = shopServise;
         }
 
-        [HttpGet]
-        public ActionResult Index()
-        {
-            return Ok("Shop Controller is working");
-        }
+        [HttpGet("status")]
+        public IActionResult Get() => Ok("API працює");//готово
 
         [Authorize(Roles = "Seller")]
-        [HttpPost("CreateShop")]
-        public async Task<IActionResult> CreateShop([FromBody] CreateShopModel model)
+        [HttpPost("create")]
+        public async Task<IActionResult> CreateShop([FromBody] CreateShopModel model)//готово
         {
-            model.OwnerId = User.GetUserId();
-            var result = _shopServise.CreateShopAsync(model);
-           
+            await _shopServise.CreateShopAsync(model, User.GetUserId());
+
             return Ok(new { message = "Магазин успішно створений" });
         }
 
         [Authorize(Roles = "Seller")]
-        [HttpPost("UpdateShop")]
-        public async Task<IActionResult> UpdateShop([FromBody] UpdateShopModel model)
+        [HttpPost("update")]
+        public async Task<IActionResult> UpdateShop([FromBody] UpdateShopModel model)//готово
         {
-            model.OwnerId = User.GetUserId(); 
-            var result = _shopServise.UpdateShopAsync(model); 
-
+            await _shopServise.UpdateShopAsync(model, User.GetUserId());
             return Ok(new { message = "Магазин успішно оновлено" });
         }
 
 
         [Authorize(Roles = "Seller")]
-        [HttpPost("DeleteShop")]
-        public async Task<IActionResult> DeleteShop(DeleteShopModel model)
-        {
-            model.OwnerId = User.GetUserId(); 
-            var result = _shopServise.DeleteShopAsync(model); 
-
+        [HttpDelete("{shopId}")]
+        public async Task<IActionResult> DeleteShop(int shopId)//готово
+        { 
+            await _shopServise.DeleteShopAsync(shopId, User.GetUserId()); 
             return Ok(new { message = "Магазин успішно видалено" });
         }
 
-        [HttpGet("GetShopById")]
-        public async Task<IActionResult> GetShopById(int shopId)
+        [HttpGet("shop")]
+        public async Task<IActionResult> GetShopById(int shopId)//готово
         {
             var result = await _shopServise.GetShopByIdAsync(shopId);
-
             return Ok(result);
         }
 
         [Authorize(Roles = "Seller")]
-        [HttpGet("GetAllShops")]
+        [HttpGet("shops")]//готово
         public async Task<IActionResult> GetAllShops()
         {
             var result = await _shopServise.GetAllShopsAsync(User.GetUserId());
-
             return Ok(result);
         }
     }

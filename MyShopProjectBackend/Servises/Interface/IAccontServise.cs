@@ -1,6 +1,5 @@
 ﻿using MyShopProjectBackend.DTO;
-using MyShopProjectBackend.ViewModels.Login;
-using MyShopProjectBackend.ViewModels.Register;
+using MyShopProjectBackend.Models.User;
 
 namespace MyShopProjectBackend.Servises.Interface
 {

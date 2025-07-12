@@ -5,10 +5,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MyShopProjectBackend.Db;
+using MyShopProjectBackend.Entities;
 using MyShopProjectBackend.Middleware;
-using MyShopProjectBackend.Models;
 using MyShopProjectBackend.Servises;
 using MyShopProjectBackend.Servises.Interface;
+using NLog;
+using NLog.Web;
 using System.Security.Claims;
 using System.Text;
 
@@ -33,7 +35,13 @@ namespace MyShopProjectBackend
 
         public static void Main(string[] args)
         {
+            var logger = NLog.LogManager.GetCurrentClassLogger();
+
             var builder = WebApplication.CreateBuilder(args);
+
+            builder.Logging.ClearProviders();
+            builder.Logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
+            builder.Host.UseNLog();
 
             builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
             var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();

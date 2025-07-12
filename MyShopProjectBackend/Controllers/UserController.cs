@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MyShopProjectBackend.Extensions;
+using MyShopProjectBackend.Models.User;
 using MyShopProjectBackend.Servises.Interface;
-using MyShopProjectBackend.ViewModels.Update;
 using System.Security.Claims;
 
 namespace MyShopProjectBackend.Controllers
@@ -18,41 +18,44 @@ namespace MyShopProjectBackend.Controllers
             _userServise = userServise;
         }
 
-        [HttpGet]
-        public ActionResult Index()
-        {
-            return Ok("User Controller is working");
-        }
+        [HttpGet("status")]
+        public IActionResult Get() => Ok("API працює");//готово
 
-        [HttpGet("GetUserById")]
-        public async Task<IActionResult> GetUserById(string userName)
+        [HttpGet("by-username")]
+        public async Task<IActionResult> GetUserByName(string userName)//готово
         {
             var result = await _userServise.GetUserByNameAsync(userName);
             return Ok(result);
         }
+        [Authorize]
+        [HttpGet("curent")]
+        public async Task<IActionResult> GetCurrentUser()//готово
+        {
+            var result = await _userServise.GetUserByIdAsync(User.GetUserId());
+            return Ok(result);
+        }
 
         [Authorize]
-        [HttpPost("UpdateUser")]
-        public async Task<IActionResult> UpdateUser([FromBody] UpdateUserModel model)
+        [HttpPost("update")]
+        public async Task<IActionResult> UpdateUser([FromBody] UpdateUserModel model)//готово
         {
-            model.UserId = User.GetUserId();
-            var result = _userServise.UpdateUserAsync(model);
+            await _userServise.UpdateUserAsync(model, User.GetUserId());
 
             return Ok(new { message = "Користувача оновлено успішно" });
         }
 
-        [HttpGet("GetAllUsers")]
-        public async Task<IActionResult> GetAllUsers()
+        [HttpGet("users")]
+        public async Task<IActionResult> GetAllUsers()//готово
         {
             var result = await _userServise.GetAllUsersAsync();
             return Ok(result);
         }
 
         [Authorize]
-        [HttpPost("DeleteUser")]
-        public async Task<IActionResult> DeleteUser()
+        [HttpDelete]
+        public async Task<IActionResult> DeleteUser()//готово
         {
-            var resualt = _userServise.DeleteUserAsync(User.GetUserId());
+            await _userServise.DeleteUserAsync(User.GetUserId());
             return Ok(new { message = "Користувача видалено успішно" });
         }
 

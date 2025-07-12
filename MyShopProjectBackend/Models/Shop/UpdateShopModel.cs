@@ -1,0 +1,10 @@
+﻿namespace MyShopProjectBackend.Models.Shop
+{
+    public class UpdateShopModel
+    {
+        public int ShopId { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
+      
+    }
+}

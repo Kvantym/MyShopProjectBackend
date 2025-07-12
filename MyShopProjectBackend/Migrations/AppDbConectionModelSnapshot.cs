@@ -226,8 +226,9 @@ namespace MyShopProjectBackend.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -260,7 +261,7 @@ namespace MyShopProjectBackend.Migrations
                     b.ToTable("cartItems");
                 });
 
-            modelBuilder.Entity("MyShopProjectBackend.Models.FavoritProduct", b =>
+            modelBuilder.Entity("MyShopProjectBackend.Models.FavouriteProduct", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -274,8 +275,9 @@ namespace MyShopProjectBackend.Migrations
                     b.Property<int>("ProductId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -297,8 +299,9 @@ namespace MyShopProjectBackend.Migrations
                     b.Property<string>("ApplicationUserId")
                         .HasColumnType("text");
 
-                    b.Property<int>("BuyerId")
-                        .HasColumnType("integer");
+                    b.Property<string>("BuyerId")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreateAt")
                         .HasColumnType("timestamp with time zone");
@@ -409,8 +412,13 @@ namespace MyShopProjectBackend.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -438,8 +446,9 @@ namespace MyShopProjectBackend.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("OwnerId")
-                        .HasColumnType("integer");
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -545,7 +554,7 @@ namespace MyShopProjectBackend.Migrations
                     b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("MyShopProjectBackend.Models.FavoritProduct", b =>
+            modelBuilder.Entity("MyShopProjectBackend.Models.FavouriteProduct", b =>
                 {
                     b.HasOne("MyShopProjectBackend.Models.ApplicationUser", null)
                         .WithMany("FavoritProducts")

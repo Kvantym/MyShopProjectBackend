@@ -1,14 +1,17 @@
 ﻿using Azure;
 using MyShopProjectBackend.Exceptions;
+using NLog;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Text.Json;
+using ILogger = NLog.ILogger;
 
 namespace MyShopProjectBackend.Middleware
 {
     public class CustomExceptionHandlerMiddleware
     {
         private readonly RequestDelegate _next;
+        private readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
         public CustomExceptionHandlerMiddleware(RequestDelegate next)
         {
@@ -23,6 +26,7 @@ namespace MyShopProjectBackend.Middleware
             }
             catch (Exception exception)
             {
+                _logger.Error(exception);
                 await HandleExceptionAsync(context, exception);
             }
         }
