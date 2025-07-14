@@ -36,10 +36,10 @@ namespace MyShopProjectBackend.Controllers
             return Ok(new { message = "Відгук успішно відредаговано" });
         }
         [Authorize]
-        [HttpDelete("{productId}")]
-        public async Task<IActionResult> DeleteReview(int productId)//готово
+        [HttpDelete("{reviewId}")]
+        public async Task<IActionResult> DeleteReview(int reviewId)//готово
         {
-            await _reviewServise.DeleteReviewAsync(productId, User.GetUserId());
+            await _reviewServise.DeleteReviewAsync(reviewId, User.GetUserId());
             return Ok(new { message = "Відгук успішно видалено" });
         }
 

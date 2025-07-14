@@ -1,4 +1,5 @@
 ﻿using MyShopProjectBackend.DTO;
+using MyShopProjectBackend.Entities;
 using MyShopProjectBackend.Models.Order;
 
 namespace MyShopProjectBackend.Servises.Interface
@@ -11,5 +12,8 @@ namespace MyShopProjectBackend.Servises.Interface
         public Task CreateOrderAsync(string userId, List<OrderItemDto> orderItems);
         public Task DeleteOrderAsync(int orderId, string sellerId);
         public Task<List<OrderDto>> GetAllOrdersAsync(int shopId, string sellerId);
+        public Task<Order> GetOrderWithDetailsAsync(int orderId);
+        public Task<List<Order>> GetOrdersByBuyerAndSellerAsync(ApplicationUser buyer, ApplicationUser seller);
+        public Task<List<Order>> GetOrdersByShopIdAsync(ApplicationUser seller, Shop shop);
     }
 }

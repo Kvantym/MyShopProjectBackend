@@ -9,6 +9,6 @@ namespace MyShopProjectBackend.Servises.Interface
 
         public Task<string> RegisterUserAsync(RegisterUserModel model, string role); // Асинхронний метод для реєстрації користувача з вказаною роллю
 
-        public Task<UserDto?> GetCurrentUserAsync(); // Асинхронний метод для отримання поточного користувача
+        public Task<UserDto?> GetCurrentUserAsync();
     }
 }

@@ -18,7 +18,6 @@ namespace MyShopProjectBackend.Servises
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IConfiguration _configuration;
         private readonly SignInManager<ApplicationUser> _signInManager;
-
         private readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
         public AccountServise(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IConfiguration configuration)

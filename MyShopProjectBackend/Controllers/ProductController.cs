@@ -44,7 +44,7 @@ namespace MyShopProjectBackend.Controllers
         [HttpGet("by-name/{productName}")]
         public async Task<IActionResult> GetProductByName(string productName)//готово
         {
-            var result = await _productServises.GetProductByNameAsync(productName);
+            var result = await _productServises.GetProductsByNameAsync(productName);
             return Ok(result);
         }
         [HttpGet("by-shop/{shopId}")]

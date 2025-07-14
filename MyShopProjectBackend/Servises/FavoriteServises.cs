@@ -14,31 +14,24 @@ namespace MyShopProjectBackend.Servises
     {
         private readonly AppDbConection _context;
         private readonly ILogger _logger = LogManager.GetCurrentClassLogger();
-        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IUserServise _userServise;
+        private readonly IProductServises _productServises;
 
-        public FavoriteServises(AppDbConection context, UserManager<ApplicationUser> userManager)
+        public FavoriteServises(AppDbConection context, UserManager<ApplicationUser> userManager, IUserServise userServise, IProductServises productServises)
         {
             _context = context;
-            _userManager = userManager;
+            _userServise = userServise;
+            _productServises = productServises;
         }
 
-        public async Task AddToFavoritesAsync(AddFavoritModel model , string userId)
+        public async Task AddToFavoritesAsync(AddFavoritModel model , string userId)//готово
         {
             _logger.Info($"{nameof(AddToFavoritesAsync)}: Виклик методу");
           
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
-            {
-                _logger.Warn($"{nameof(AddToFavoritesAsync)}: Користувача з ID {userId} не знайдено");
-                throw new NotFoundException("Користувач не знайдений");
-            }
+            var user = await _userServise.GetUserOrThrowAsyncId(userId);
 
-            var product = await _context.products.FindAsync(model.ProductId);
-            if (product == null)
-            {
-                _logger.Warn($"{nameof(AddToFavoritesAsync)}: Товар з ID {model.ProductId} не знайдено");
-                throw new BadRequestException($"Товар з ID {model.ProductId} не знайдено");
-            }
+            var product = await _productServises.GetProductOrThrowIdAsync(model.ProductId);
+
             _logger.Info($"{nameof(AddToFavoritesAsync)}: Додавання товару з ID {product.Name} до обраного користувача з ID {user.UserName}");
             bool alreadyExists = await _context.favoritProducts.AnyAsync(fp => fp.UserId == userId && fp.ProductId == model.ProductId);
             if (alreadyExists)
@@ -58,15 +51,10 @@ namespace MyShopProjectBackend.Servises
             _logger.Info($"{nameof(AddToFavoritesAsync)}: Товар з ID {model.ProductId} успішно додано до обраного користувача  {user.UserName}");
         }
 
-        public async Task<List<FavouriteProduct>> GetFavoritesAsync(string userId)
+        public async Task<List<FavouriteProduct>> GetFavoritesAsync(string userId)//готово
         {
             _logger.Info($"{nameof(GetFavoritesAsync)}: Виклик методу");
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null) 
-            {
-                _logger.Warn($"{nameof(AddToFavoritesAsync)}: Користувача з ID {userId} не знайдено");
-                throw new NotFoundException("Користувач не знайдений");
-            }
+            var user = await _userServise.GetUserOrThrowAsyncId(userId);
 
             _logger.Info($"{nameof(GetFavoritesAsync)}: Отримання улюблених товарів для користувача з ID {user.UserName}");
 
@@ -84,22 +72,12 @@ namespace MyShopProjectBackend.Servises
             return favoritProducts;
         }
 
-        public async Task RemoveFromFavoritesAsync(int productId, string userId)
+        public async Task RemoveFromFavoritesAsync(int productId, string userId)//готово
         {
             _logger.Info($"{nameof(RemoveFromFavoritesAsync)}: Виклик методу");
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
-            {
-                _logger.Info($"{nameof(RemoveFromFavoritesAsync)}: Користувач {userId} не знайдений");
-                throw new RegistrationException("Користувач з таким іменем не знайдений");
-            }
+            var user = await _userServise.GetUserOrThrowAsyncId(userId);
 
-            var product = await _context.products.FindAsync(productId);
-            if (product == null)
-            {
-                _logger.Warn($"{nameof(RemoveFromFavoritesAsync)}: Товар з ID {productId} не знайдено");
-                throw new BadRequestException($"Товар з ID {productId} не знайдено");
-            }
+            var product = await _productServises.GetProductOrThrowIdAsync(productId);
             _logger.Info($"{nameof(RemoveFromFavoritesAsync)}: Видалення товару з ID {product.Name} з обраного користувача з ID {user.UserName}");
 
             var favoritProduct = await _context.favoritProducts

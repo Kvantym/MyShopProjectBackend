@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MyShopProjectBackend.Db;
 using MyShopProjectBackend.Entities;
+using MyShopProjectBackend.Helpers;
 using MyShopProjectBackend.Middleware;
 using MyShopProjectBackend.Servises;
 using MyShopProjectBackend.Servises.Interface;
@@ -90,6 +91,7 @@ namespace MyShopProjectBackend
             });
 
             // –еЇстрац≥€ серв≥с≥в
+            builder.Services.AddScoped<CartServisesHelper>();
             builder.Services.AddScoped<IAccountService, AccountServise>();
             builder.Services.AddScoped<ICartServises, CartServises>();
             builder.Services.AddScoped<IFavoriteServises, FavoriteServises>();
@@ -98,6 +100,7 @@ namespace MyShopProjectBackend
             builder.Services.AddScoped<IReviewServise, ReviewServise>();
             builder.Services.AddScoped<IUserServise, UserServise>();
             builder.Services.AddScoped<IShopServise, ShopServise>();
+         
 
             builder.Services.AddHttpContextAccessor();
 

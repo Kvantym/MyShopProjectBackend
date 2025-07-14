@@ -13,60 +13,44 @@ namespace MyShopProjectBackend.Servises
     public class ShopServise : IShopServise
     {
         private readonly AppDbConection _context;
-        private readonly UserManager<ApplicationUser> _userManager;
         private readonly NLog.ILogger _logger =LogManager.GetCurrentClassLogger();
+        private readonly IUserServise _userServise;
 
-        public ShopServise(AppDbConection context, UserManager<ApplicationUser> userManager)
+
+
+        public ShopServise(AppDbConection context, IUserServise userServise)
         {
             _context = context;
-            _userManager = userManager;
         }
 
-        public async Task CreateShopAsync(CreateShopModel model, string ownerId)
+        public async Task CreateShopAsync(CreateShopModel model, string ownerId)//готово
         {
             _logger.Info($"{nameof(CreateShopAsync)}: Виклик методу");
-            var user = await _userManager.FindByIdAsync(ownerId);
-            if (user == null)
-            {
-                _logger.Warn($"{nameof(CreateShopAsync)}: Користувача з ID {ownerId} не знайдено");
-                throw new NotFoundException("Користувача не знайдено");
-            }
 
-            var isSeller = await _userManager.IsInRoleAsync(user, "Seller");
-            if (!isSeller)
-            {
-                _logger.Warn($"{nameof(CreateShopAsync)}: Користувач {user.UserName} не є продавцем");
-                throw new AuthorizationException("Ви не зареєстровані як продавець");
-            }
+            var seller = await _userServise.GetUserOrThrowAsyncId(ownerId);
+
+            var isSeller =  await _userServise.EnsureUserHasRoleOrThrowAsync(seller, "Seller");
 
             var shop = new Shop
             {
                 Name = model.Name,
                 Description = model.Description,
-                OwnerId = user.Id
+                OwnerId = seller.Id
             };
 
             await _context.shops.AddAsync(shop);
             await _context.SaveChangesAsync();
 
-            _logger.Info($"{nameof(CreateShopAsync)}: Магазин '{shop.Name}' успішно створено для користувача {user.UserName}, {nameof(CreateShopAsync)}: Успішно виконано");
+            _logger.Info($"{nameof(CreateShopAsync)}: Магазин '{shop.Name}' успішно створено для користувача {seller.UserName}, {nameof(CreateShopAsync)}: Успішно виконано");
         }
 
-        public async Task DeleteShopAsync(int shopId, string ownerId)
+        public async Task DeleteShopAsync(int shopId, string ownerId)//готово
         {
             _logger.Info($"{nameof(DeleteShopAsync)}: Виклик методу");
-            var shop = await _context.shops.FindAsync(shopId);
-            if (shop == null)
-            {
-                _logger.Warn($"{nameof(DeleteShopAsync)}: Магазин з ID {shopId} не знайдено");
-                throw new NotFoundException("Магазин не знайдено");
-            }
-            var user = await _userManager.FindByIdAsync(ownerId);
-            if (user == null)
-            {
-              _logger.Warn($"{nameof(DeleteShopAsync)}: Користувача з ID {ownerId} не знайдено");
-               throw new NotFoundException("Користувача не знайдено");
-            }
+
+            var user = await _userServise.GetUserOrThrowAsyncId(ownerId);
+
+            var shop = await GetShopOrThrowAsync(shopId);
 
             if (shop.OwnerId != ownerId)
             {
@@ -80,16 +64,12 @@ namespace MyShopProjectBackend.Servises
             _logger.Info($"{nameof(DeleteShopAsync)}: Магазин з ID {shop.Name} успішно видалено, {nameof(DeleteShopAsync)}: Успішно виконано");
         }
 
-        public async Task<List<ShopDto>> GetAllShopsAsync(string OwnerId)
+        public async Task<List<ShopDto>> GetAllShopsAsync(string OwnerId)//готово
         {
             _logger.Info($"{nameof(GetAllShopsAsync)}: Виклик методу");
             var shops = await _context.shops.Where(s => s.OwnerId == OwnerId).ToListAsync();
-            var user = await _userManager.FindByIdAsync(OwnerId);
-            if (user == null)
-            {
-                _logger.Warn($"{nameof(GetAllShopsAsync)}: Користувача з ID {OwnerId} не знайдено");
-                throw new NotFoundException("Користувача не знайдено");
-            }
+
+            var user = await _userServise.GetUserOrThrowAsyncId(OwnerId);
 
             if (shops == null || !shops.Any())
             {
@@ -109,17 +89,11 @@ namespace MyShopProjectBackend.Servises
             return shopDtos;
         }
 
-        public async Task<ShopDto?> GetShopByIdAsync(int shopId)
+        public async Task<ShopDto?> GetShopByIdAsync(int shopId)//готово
         {
             _logger.Info($"{nameof(GetShopByIdAsync)}: Виклик методу");
-            var shop = await _context.shops.FindAsync(shopId);
-
-            if (shop == null)
-            {
-                _logger.Warn($"{nameof(GetShopByIdAsync)}: Магазин з ID {shopId} не знайдено");
-                throw new NotFoundException("Магазин не знайдено");
-            }
-
+            var shop = await GetShopOrThrowAsync(shopId);
+  
             _logger.Info($"{nameof(GetShopByIdAsync)}: Магазин з ID {shop.Name} знайдено");
           var shopDto=   new ShopDto
             {
@@ -131,21 +105,11 @@ namespace MyShopProjectBackend.Servises
             return shopDto;
         }
 
-        public async Task UpdateShopAsync(UpdateShopModel model, string ownerId)
+        public async Task UpdateShopAsync(UpdateShopModel model, string ownerId)//готово
         {
             _logger.Info($"{nameof(UpdateShopAsync)}: Виклик методу");
-            var shop = await _context.shops.FindAsync(model.ShopId);
-
-            if (shop == null)
-            {
-                _logger.Warn($"{nameof(UpdateShopAsync)}: Магазин з ID {model.ShopId} не знайдено");
-                throw new NotFoundException("Магазин не знайдено");
-            }
-            var user = await _userManager.FindByIdAsync(ownerId);
-            if (user == null) {
-                _logger.Warn($"{nameof(GetAllShopsAsync)}: Користувача з ID {ownerId} не знайдено");
-                throw new NotFoundException("Користувача не знайдено");
-            }
+            var user = await _userServise.GetUserOrThrowAsyncId(ownerId);
+            var shop = await GetShopOrThrowAsync(model.ShopId);
 
             if (shop.OwnerId != user.Id)
             {
@@ -159,6 +123,41 @@ namespace MyShopProjectBackend.Servises
             await _context.SaveChangesAsync();
 
             _logger.Info($"{nameof(UpdateShopAsync)}: Магазин з ID {shop.Name} успішно оновлено, {nameof(UpdateShopAsync)}: Успішно виконано");
+        }
+        public async Task<Shop> EnsureSellerOwnsShopAsync(ApplicationUser seller, int shopId)
+        {
+            var shop = await _context.shops.FindAsync(shopId);
+            if (shop == null || shop.OwnerId != seller.Id)
+            {
+                _logger.Warn($"{nameof(EnsureSellerOwnsShopAsync)}: Магазин не знайдено або продавець не є його власником");
+                throw new NotFoundException("Магазин не знайдено або ви не є його власником");
+            }
+            return shop;
+        }
+        public async Task<Shop> EnsureSellerOwnsShopForProductAsync(ApplicationUser seller, Product product)
+        {
+            var shop = await _context.shops.FindAsync(product.ShopId);
+            if (shop == null)
+            {
+                _logger.Warn($"{nameof(EnsureSellerOwnsShopForProductAsync)}: Магазин з ID {product.ShopId} не знайдено");
+                throw new NotFoundException("Магазин товару не знайдено");
+            }
+            if (shop.OwnerId != seller.Id)
+            {
+                _logger.Warn($"{nameof(EnsureSellerOwnsShopForProductAsync)}: Користувач {seller.UserName} не має прав на видалення товару з магазину {shop.Name}");
+                throw new AuthorizationException("Ви не маєте права видаляти товар з чужого магазину");
+            }
+            return shop;
+        }
+        public async Task<Shop> GetShopOrThrowAsync(int shopId)
+        {
+            var shop = await _context.shops.FindAsync(shopId);
+            if (shop == null)
+            {
+                _logger.Warn($"{nameof(GetShopOrThrowAsync)}: Магазин з ID {shopId} не знайдено");
+                throw new NotFoundException("Магазин не знайдено");
+            }
+            return shop;
         }
     }
 }

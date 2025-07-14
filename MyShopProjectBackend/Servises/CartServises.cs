@@ -15,33 +15,26 @@ namespace MyShopProjectBackend.Servises
     public class CartServises : ICartServises
     {
         private readonly AppDbConection _context;
-        private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger _logger = LogManager.GetCurrentClassLogger();
+        private readonly IUserServise _userServise;
+        private readonly IProductServises _productServises;
 
-        public CartServises(AppDbConection context, UserManager<ApplicationUser> userManager)
+        public CartServises(AppDbConection context, IUserServise userServise, IProductServises productServises)
         {
             _context = context;
-            _userManager = userManager;
+            _userServise = userServise;
+            _productServises = productServises;
         }
 
-        public async Task AddToCartAsync(AddToCartModel model, string userId)
+        public async Task AddToCartAsync(AddToCartModel model, string userId)//готово
         {
             _logger.Info($"{nameof(AddToCartAsync)}: Виклик методу");
           
 
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
-            {
-                _logger.Error($"{nameof(AddToCartAsync)}: Користувача не знайдено");
-                throw new AuthorizationException("Користувач не знайдений");
-            }
+            var user = await _userServise.GetUserOrThrowAsyncId(userId);
 
-            var product = await _context.products.FindAsync(model.ProductId);
-            if (product == null)
-            {
-                _logger.Error($"{nameof(AddToCartAsync)}: Товар не знайдено");
-                throw new NotFoundException("Товар не знайдено");
-            }
+            var product = await _productServises.GetProductOrThrowIdAsync(model.ProductId);
+          
             _logger.Info($"{nameof(AddToCartAsync)}: Додавання товару {product.Name} (к-ть {model.Quantity}) користувачу {user.UserName}");
             if (model.Quantity <= 0)
             {
@@ -87,14 +80,10 @@ namespace MyShopProjectBackend.Servises
         public async Task CheckoutAsync(string userId)
         {
             _logger.Info($"{nameof(CheckoutAsync)}: Виклик методу");
-            
 
-            var user = await _userManager.FindByIdAsync(userId.ToString());
-            if (user == null)
-            {
-                _logger.Error($"{nameof(CheckoutAsync)}: Користувача не знайдено");
-                throw new NotFoundException("Користувач не знайдений");
-            }
+
+            var user = await _userServise.GetUserOrThrowAsyncId(userId);
+
             _logger.Info($"{nameof(CheckoutAsync)}: Оформлення замовлення для користувача {user.UserName}");
             var cart = await _context.carts
                 .Include(c => c.Items)
@@ -152,12 +141,7 @@ namespace MyShopProjectBackend.Servises
         {
             _logger.Info($"{nameof(ClearCartAsync)}: Виклик методу");
 
-            var user = await _userManager.FindByIdAsync(userId.ToString());
-            if (user == null)
-            {
-                _logger.Error($"{nameof(ClearCartAsync)}: Користувача не знайдено");
-                throw new NotFoundException("Користувач не знайдений");
-            }
+            var user = await _userServise.GetUserOrThrowAsyncId(userId);
 
             var cart = await _context.carts.Include(c => c.Items).FirstOrDefaultAsync(c => c.UserId == userId);
             if (cart == null)
@@ -176,12 +160,7 @@ namespace MyShopProjectBackend.Servises
         {
             _logger.Info($"{nameof(GetCartAsync)}: Виклик методу");
 
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
-            {
-                _logger.Error($"{nameof(GetCartAsync)}: Користувача не знайдено");
-                throw new AuthorizationException("Користувач не знайдений");
-            }
+            var user = await _userServise.GetUserOrThrowAsyncId(userId);
             _logger.Info($"{nameof(GetCartAsync)}: Отримання кошика користувача {user.UserName}");
             var cart = await _context.carts.SingleOrDefaultAsync(c => c.UserId == userId);
             if (cart == null)
@@ -218,19 +197,10 @@ namespace MyShopProjectBackend.Servises
         {
             _logger.Info($"{nameof(RemoveFromCartAsync)}: Виклик методу");
 
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
-            {
-                _logger.Error($"{nameof(RemoveFromCartAsync)}: Користувача не знайдено");
-                throw new NotFoundException("Користувач не знайдений");
-            }
+            var user = await _userServise.GetUserOrThrowAsyncId(userId);
 
-            var product = await _context.products.FindAsync(productId);
-            if (product == null)
-            {
-                _logger.Error($"{nameof(RemoveFromCartAsync)}: Товар не знайдено");
-                throw new NotFoundException("Товар не знайдено");
-            }
+            var product = await _productServises.GetProductOrThrowIdAsync(productId);
+
             _logger.Info($"{nameof(RemoveFromCartAsync)}: Видалення товару {product.Name} з кошика користувача {user.UserName}");
             var cart = await _context.carts.Include(c => c.Items).FirstOrDefaultAsync(c => c.UserId == userId);
             if (cart == null)
@@ -257,19 +227,10 @@ namespace MyShopProjectBackend.Servises
         {
             _logger.Info($"{nameof(UpdateCartAsync)}: Виклик методу");
 
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
-            {
-                _logger.Error($"{nameof(UpdateCartAsync)}: Користувача не знайдено");
-                throw new AuthorizationException("Користувач не знайдений");
-            }
+            var user = await _userServise.GetUserOrThrowAsyncId(userId);
 
-            var product = await _context.products.FindAsync(model.ProductId);
-            if (product == null)
-            {
-                _logger.Error($"{nameof(UpdateCartAsync)}: Товар не знайдено");
-                throw new NotFoundException("Товар не знайдено");
-            }
+            var product = await _productServises.GetProductOrThrowIdAsync(model.ProductId);
+
             _logger.Info($"{nameof(UpdateCartAsync)}: Оновлення товару {product.Name} в кошику користувача {user.UserName}");
             if (product.Quantity < model.Quantity)
             {

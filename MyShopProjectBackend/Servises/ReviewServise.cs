@@ -13,31 +13,23 @@ namespace MyShopProjectBackend.Servises
     public class ReviewServise : IReviewServise
     {
         private readonly AppDbConection _context;
-        private readonly UserManager<ApplicationUser> _userManager;
         private readonly NLog.ILogger _logger = LogManager.GetCurrentClassLogger();
+        private readonly IUserServise _userServise;
+        private readonly IProductServises _productServises;
 
-        public ReviewServise(AppDbConection context, UserManager<ApplicationUser> userManager)
+        public ReviewServise(AppDbConection context, IUserServise userServise, IProductServises productServises)
         {
             _context = context;
-            _userManager = userManager;
+            _userServise = userServise;
+            _productServises = productServises;
         }
 
         public async Task AddReviewAsync(CreateReviewModel model, string userId)
         {
             _logger.Info($"{nameof(AddReviewAsync)}: Виклик методу");
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null) 
-            {
-                _logger.Warn($"{nameof(AddReviewAsync)}: Користувача з ID {userId} не знайдено");
-                throw new NotFoundException("Користувача не знайдено");
-            } 
+            var user = await _userServise.GetUserOrThrowAsyncId(userId);
 
-            var product = await _context.products.FindAsync(model.ProductId);
-            if (product == null)
-            {
-                _logger.Warn($"{nameof(AddReviewAsync)}: Товар з ID {model.ProductId} не знайдено");
-                throw new NotFoundException("Товар не знайдено");
-            }
+            var product = await _productServises.GetProductOrThrowIdAsync(model.ProductId);
 
             var review = new ProductReview
             {
@@ -53,22 +45,12 @@ namespace MyShopProjectBackend.Servises
             _logger.Info($"{nameof(AddReviewAsync)}: Відгук додано для товару {product.Name}, {nameof(AddReviewAsync)}: Успішно виконано");
         }
 
-        public async Task DeleteReviewAsync(int productId, string userId)
+        public async Task DeleteReviewAsync(int reviewId, string userId)
         {
             _logger.Info($"{nameof(DeleteReviewAsync)}: Виклик методу");
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
-            {
-                _logger.Warn($"{nameof(DeleteReviewAsync)}: Користувача з ID {userId} не знайдено");
-                throw new NotFoundException("Користувача не знайдено");
-            }
+            var user = await _userServise.GetUserOrThrowAsyncId(userId);
 
-            var review = await _context.productReviews.FindAsync(productId);
-            if (review == null)
-            {
-                _logger.Warn($"{nameof(DeleteReviewAsync)}: Відгук з ID {productId} не знайдено");
-                throw new NotFoundException("Відгук не знайдено");
-            }
+            var review = await GetReviewOrThrowAsync(reviewId);
 
             if (review.UserId != user.Id)
             {
@@ -85,12 +67,8 @@ namespace MyShopProjectBackend.Servises
         public async Task<List<ReviewDto>> GetReviewsByProductAsync(int productId)
         {
             _logger.Info($"{nameof(GetReviewsByProductAsync)}: Виклик методу");
-            var product = await _context.products.FindAsync(productId);
-            if (product == null)
-            {
-                _logger.Warn($"{nameof(GetReviewsByProductAsync)}: Товар з ID {productId} не знайдено");
-                throw new NotFoundException("Товар не знайдено");
-            }
+
+            var product = await _productServises.GetProductOrThrowIdAsync(productId);
 
             var reviewsEntities = await _context.productReviews
                 .Where(r => r.ProductId == productId)
@@ -102,9 +80,7 @@ namespace MyShopProjectBackend.Servises
             }
 
             var userIds = reviewsEntities.Select(r => r.UserId).Distinct().ToList();
-            var users = await _userManager.Users
-                .Where(u => userIds.Contains(u.Id))
-                .ToListAsync();
+            var users = await _userServise.GetUsersByIdsAsync(userIds);
 
             var reviews = reviewsEntities.Select(r => new ReviewDto
             {
@@ -122,19 +98,9 @@ namespace MyShopProjectBackend.Servises
         public async Task UpdateReviewAsync(UpdateReviewModel model, string userId)
         {
             _logger.Info($"{nameof(UpdateReviewAsync)}: Виклик методу");
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
-            {
-                _logger.Warn($"{nameof(UpdateReviewAsync)}: Користувача з ID {userId} не знайдено");
-                throw new NotFoundException("Користувача не знайдено");
-            }
+            var user = await _userServise.GetUserOrThrowAsyncId(userId);
 
-            var review = await _context.productReviews.FindAsync(model.ReviewId);
-            if (review == null)
-            {
-                _logger.Warn($"{nameof(DeleteReviewAsync)} : Відгук з ID {model.ReviewId} не знайдено");
-                throw new NotFoundException("Відгук не знайдено");
-            }
+            var review = await GetReviewOrThrowAsync(model.ReviewId);
 
             if (review.UserId != user.Id)
             {
@@ -147,6 +113,17 @@ namespace MyShopProjectBackend.Servises
             await _context.SaveChangesAsync();
 
             _logger.Info($"{nameof(UpdateReviewAsync)}: Відгук з ID {review.Id} оновлено, {nameof(UpdateReviewAsync)}: Успішно виконано");
+        }
+        private async Task<ProductReview> GetReviewOrThrowAsync(int reviewId)
+        {
+            _logger.Info($"{nameof(GetReviewOrThrowAsync)}: Виклик методу");
+            var review = await _context.productReviews.FindAsync(reviewId);
+            if (review == null)
+            {
+                _logger.Warn($"{nameof(GetReviewOrThrowAsync)}: Відгук з ID {reviewId} не знайдено");
+                throw new NotFoundException("Відгук не знайдено");
+            }
+            return review;
         }
     }
 }

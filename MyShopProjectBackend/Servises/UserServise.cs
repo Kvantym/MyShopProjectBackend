@@ -80,7 +80,7 @@ namespace MyShopProjectBackend.Servises
             return userDtos;
         }
 
-        public async Task<ApplicationUser?> GetUserByNameAsync(string userName)
+        public async Task<ApplicationUser> GetUserByNameAsync(string userName)
         {
             _logger.Info($"{nameof(GetUserByNameAsync)}: Виклик методу");
             var user = await _userManager.FindByNameAsync(userName);
@@ -141,7 +141,7 @@ namespace MyShopProjectBackend.Servises
 
             _logger.Info($"{nameof(UpdateUserAsync)}: Користувач {user.UserName} успішно оновлений, {nameof(UpdateUserAsync)}: Виконано успішно");
         }
-        public async Task<ApplicationUser?> GetUserByIdAsync(string userId)
+        public async Task<ApplicationUser> GetUserByIdAsync(string userId)
         {
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null)
@@ -152,5 +152,65 @@ namespace MyShopProjectBackend.Servises
             _logger.Info($"{nameof(GetUserByIdAsync)}: Користувача {user.UserName} знайдено, {nameof(GetUserByIdAsync)}: Виконано успішно");
             return user;
         }
+
+        public async Task<ApplicationUser> GetUserOrThrowAsyncId(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                _logger.Warn($"{nameof(GetUserOrThrowAsyncId)}: Користувача з ID {userId} не знайдено");
+                throw new NotFoundException("Користувача не знайдено");
+            }
+            _logger.Info($"{nameof(GetUserOrThrowAsyncId)}: Користувача {user.UserName} знайдено, {nameof(GetUserOrThrowAsyncId)}: Виконано успішно");
+            return user;
+        }
+        public async Task<ApplicationUser> GetUserOrThrowAsyncName(string userName)
+        {
+            var user = await _userManager.FindByNameAsync(userName);
+            if (user == null)
+            {
+                _logger.Warn($"{nameof(GetUserOrThrowAsyncName)}: Користувача з іменем {userName} не знайдено");
+                throw new NotFoundException("Користувача не знайдено");
+            }
+            _logger.Info($"{nameof(GetUserOrThrowAsyncName)}: Користувача {user.UserName} знайдено, {nameof(GetUserOrThrowAsyncName)}: Виконано успішно");
+            return user;
+        }
+        public async Task<List<string>> EnsureUserHasRoleOrThrowAsync(ApplicationUser user, string requiredRole)
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+            if (!roles.Contains("Seller"))
+            {
+                _logger.Warn($"{nameof(EnsureUserHasRoleOrThrowAsync)}: Користувач з ID: {user.UserName} не є продавцем");
+                throw new AuthorizationException("Можна тільки продавцю");
+            }
+            return (List<string>)roles;
+        }
+        public void EnsureSellerOwnsOrder(Order order, ApplicationUser user)
+        {
+            bool isSellerOwner = order.OrderItems.Any(oi => oi.Product.Shop.OwnerId == user.Id);
+            if (!isSellerOwner)
+            {
+                _logger.Warn($"{nameof(EnsureSellerOwnsOrder)}: Користувач : {user.UserName} не має доступу до замовлення");
+                throw new AuthorizationException("Ви не маєте доступу до цього замовлення");
+            }
+        }
+        public async Task<List<ApplicationUser>> GetUsersByIdsAsync(List<string> userIds)
+        {
+            _logger.Info($"{nameof(GetUsersByIdsAsync)}: Виклик методу для користувачів з IDs: {string.Join(", ", userIds)}");
+
+            var users = await _userManager.Users
+                .Where(u => userIds.Contains(u.Id))
+                .ToListAsync();
+
+            if (users == null || !users.Any())
+            {
+                _logger.Warn($"{nameof(GetUsersByIdsAsync)}: Користувачів не знайдено за заданими IDs");
+                throw new NotFoundException("Користувачів не знайдено");
+            }
+
+            _logger.Info($"{nameof(GetUsersByIdsAsync)}: Знайдено {users.Count} користувачів");
+            return users;
+        }
+
     }
 }
