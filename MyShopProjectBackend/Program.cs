@@ -1,9 +1,18 @@
-
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MyShopProjectBackend.Db;
+using MyShopProjectBackend.Entities;
+using MyShopProjectBackend.Helpers;
+using MyShopProjectBackend.Middleware;
+using MyShopProjectBackend.Services.Implementation;
+using MyShopProjectBackend.Servises.Implementation;
+using MyShopProjectBackend.Servises.Interface;
+using NLog;
+using NLog.Web;
 using System.Security.Claims;
 using System.Text;
 
@@ -11,25 +20,72 @@ namespace MyShopProjectBackend
 {
     public class Program
     {
+        public static async Task SeedRolesAsync(IServiceProvider serviceProvider)
+        {
+            var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            var roles = new[] { UserRole.Admin, UserRole.Customer, UserRole.Seller };
+
+            foreach (var role in roles)
+            {
+                if (!await roleManager.RoleExistsAsync(role))
+                {
+                    await roleManager.CreateAsync(new IdentityRole(role));
+                }
+            }
+        }
+
+
         public static void Main(string[] args)
         {
+            var logger = NLog.LogManager.GetCurrentClassLogger();
+
             var builder = WebApplication.CreateBuilder(args);
+            // Додаємо CORS-політику з іменем
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAngularDevClient", policy =>
+                {
+                    policy.WithOrigins("http://localhost:4200")
+                          .AllowAnyHeader()
+                          .AllowAnyMethod()
+                          .AllowCredentials(); // Якщо ти працюєш з авторизацією
+                });
+            });
 
-            // Add services to the container.
 
+            builder.Logging.ClearProviders();
+            builder.Logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
+            builder.Host.UseNLog();
+
+            builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
+            var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
+
+            // Додаємо контролери
             builder.Services.AddControllers();
-            // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-            builder.Services.AddOpenApi();
 
-            builder.Services.AddDbContext<AppDbConection>(optionsAction => optionsAction.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-            // Зареєструйте AppDbConection як сервіс
-            builder.Services.AddAuthentication(options => 
-            { 
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme; // Стандартна схема аутентифікації
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme; // Схема для виклику викликів аутентифікації
+            // Підключаємо контекст БД з PostgreSQL
+            builder.Services.AddDbContext<AppDbConection>(options =>
+                options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+            // Налаштування Identity з параметрами паролю
+            builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+            {
+                options.Password.RequireDigit = false;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequiredLength = 6;
             })
+            .AddEntityFrameworkStores<AppDbConection>()
+            .AddDefaultTokenProviders();
 
-            .AddJwtBearer(options => 
+            // Налаштування аутентифікації: cookie + JWT
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+
+            })
+            
+            .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
             {
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
@@ -38,20 +94,32 @@ namespace MyShopProjectBackend
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
 
-                    ValidIssuer = "MyShopProjectBackend",
-                    ValidAudience = "MyShopProjectFron",
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("superSecretKey1234567890!@#$%^&*()_+QWERTY")),
+                    ValidIssuer = jwtSettings.Issuer,
+                    ValidAudience =jwtSettings.Audience,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey)),
 
-                     RoleClaimType = ClaimTypes.Role,  
+                    RoleClaimType = ClaimTypes.Role,
                     NameClaimType = ClaimTypes.NameIdentifier
                 };
             });
 
-           
+            // Реєстрація сервісів
+           // builder.Services.AddScoped<CartServisesHelper>();
+            builder.Services.AddScoped<IAccountService, AccountService>();
+            builder.Services.AddScoped<ICartService, CartService>();
+            builder.Services.AddScoped<IFavoriteService, FavoriteService>();
+            builder.Services.AddScoped<IOrderService, OrderService>();
+            builder.Services.AddScoped<IProductService, ProductService>();
+            builder.Services.AddScoped<IReviewService, ReviewService>();
+            builder.Services.AddScoped<IUserService, UserService>();
+            builder.Services.AddScoped<IShopService, ShopService>();
+         
 
+            builder.Services.AddHttpContextAccessor();
+
+
+            // Swagger з авторизацією
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen(); // Додайте Swagger для документації API
-
             builder.Services.AddSwaggerGen(options =>
             {
                 options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -63,39 +131,50 @@ namespace MyShopProjectBackend
                 });
 
                 options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
                 {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
-    });
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
+                });
             });
 
-
-
             var app = builder.Build();
+            app.UseCors("AllowAngularDevClient");
 
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
+            using (var scope = app.Services.CreateScope())
             {
-                app.MapOpenApi();
-                app.UseSwagger();
-                app.UseSwaggerUI();
+                var services = scope.ServiceProvider;
+               
+                SeedRolesAsync(services).GetAwaiter().GetResult();
             }
 
+
+            // Конвеєр HTTP запитів
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseSwagger();
+                app.UseSwaggerUI();
+                app.MapOpenApi();
+            }
+
+            app.UseMiddleware<CustomExceptionHandlerMiddleware>();
+
             app.UseHttpsRedirection();
-            app.UseAuthentication(); // Додайте аутентифікацію до конвеєра обробки запитів
+
+           
+            app.UseAuthentication();
             app.UseAuthorization();
 
-
             app.MapControllers();
+
 
             app.Run();
         }

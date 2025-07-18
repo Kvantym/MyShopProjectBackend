@@ -1,85 +1,62 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using MyShopProjectBackend.Db;
-using MyShopProjectBackend.Models;
-using MyShopProjectBackend.ViewModels;
+using MyShopProjectBackend.Extensions;
+using MyShopProjectBackend.Models.User;
+using MyShopProjectBackend.Servises.Interface;
 using System.Security.Claims;
 
 namespace MyShopProjectBackend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class UserController : Controller
+    public class UserController : ControllerBase
     {
-        private readonly AppDbConection _context;
+        private readonly IUserService _userServise;
 
-        public UserController(AppDbConection conection)
+        public UserController(IUserService userServise)
         {
-            _context = conection;
+            _userServise = userServise;
         }
 
-        [HttpGet]
-        public ActionResult Index()
-        {
-            return View();
-        }
+        [HttpGet("status")]
+        public IActionResult Get() => Ok("API працює");//готово
 
-        [HttpGet("GetUserById")]
-        public async Task<IActionResult> GetUserById(int userId)
+        [HttpGet("by-username")]
+        public async Task<IActionResult> GetUserByName(string userName)//готово
         {
-           var user = await _context.users.FindAsync(userId);
-            if (user == null)
-            {
-                return NotFound("Користувача не знайдеено");
-            }
-            return Ok(user);
+            var result = await _userServise.GetUserByNameAsync(userName);
+            return Ok(result);
         }
         [Authorize]
-        [HttpPost("UpdateUser")]
-        public async Task<IActionResult> UpdateUser([FromBody] UpdateUserModel model)
+        [HttpGet("curent")]
+        public async Task<IActionResult> GetCurrentUser()//готово
         {
+            var result = await _userServise.GetUserByIdAsync(User.GetUserId());
+            return Ok(result);
+        }
 
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim))
-            {
-                return Unauthorized("Користувач не авторизований");
-            }
-
-            int userId = int.Parse(userIdClaim);
-            var user = await _context.users.FindAsync(userId);
-
-            if (user == null)
-            {
-                return NotFound("Користувача не знайдеено");
-            }
-
-            user.UserName = model.Name;
-            user.Email = model.Email;
-            user.Password = model.Password;
-          
-            await _context.SaveChangesAsync();
+        [Authorize]
+        [HttpPut]
+        public async Task<IActionResult> UpdateUser([FromBody] UpdateUserModel model)//готово
+        {
+            await _userServise.UpdateUserAsync(model, User.GetUserId());
 
             return Ok(new { message = "Користувача оновлено успішно" });
         }
-        [HttpGet("GetAllUsers")]
-        public async Task<IActionResult> GetAllUsers()
+
+        [HttpGet("users")]
+        public async Task<IActionResult> GetAllUsers()//готово
         {
-            var users = await _context.users.ToListAsync();
+            var result = await _userServise.GetAllUsersAsync();
+            return Ok(result);
+        }
 
-            if(users == null)
-            {
-                return NotFound("Користувачів не знайдено ");
-            }
-
-            return Ok(users);
-
+        [Authorize]
+        [HttpDelete]
+        public async Task<IActionResult> DeleteUser()//готово
+        {
+            await _userServise.DeleteUserAsync(User.GetUserId());
+            return Ok(new { message = "Користувача видалено успішно" });
         }
 
     }
