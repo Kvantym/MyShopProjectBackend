@@ -3,7 +3,7 @@ using MyShopProjectBackend.Models.Cart;
 
 namespace MyShopProjectBackend.Servises.Interface
 {
-    public interface ICartServises
+    public interface ICartService
     {
         public  Task<CartDto?> GetCartAsync(string userId);
         public Task AddToCartAsync(AddToCartModel model, string userId);

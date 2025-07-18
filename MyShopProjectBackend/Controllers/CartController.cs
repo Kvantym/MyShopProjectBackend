@@ -11,10 +11,10 @@ namespace MyShopProjectBackend.Controllers
     public class CartController : ControllerBase
     {
 
-        private readonly ICartServises _cartServises;
+        private readonly ICartService _cartServises;
 
 
-        public CartController(ICartServises cartServises)
+        public CartController(ICartService cartServises)
         {
             _cartServises = cartServises;
         }
@@ -37,7 +37,7 @@ namespace MyShopProjectBackend.Controllers
             return Ok(new { message = "Товар успішно додано до кошика" });
         }
         [Authorize]
-        [HttpPost("update-cart")]
+        [HttpPut]
         public async Task<IActionResult> UpdateCart([FromBody]UpdateCartModel model)//готово
         {
             await _cartServises.UpdateCartAsync(model, User.GetUserId());

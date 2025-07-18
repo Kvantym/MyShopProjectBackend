@@ -8,17 +8,17 @@ using MyShopProjectBackend.Servises.Interface;
 using NLog;
 using ILogger = NLog.ILogger;
 
-namespace MyShopProjectBackend.Servises
+namespace MyShopProjectBackend.Services.Implementation
 {
     //перероблено сервіс
-    public class OrderServises : IOrderServises
+    public class OrderService : IOrderService
     {
         private readonly AppDbConection _context;
         private readonly ILogger _logger = LogManager.GetCurrentClassLogger();
-        private readonly IUserServise _userServise;
-        private readonly IShopServise _shopServise;
+        private readonly IUserService _userServise;
+        private readonly IShopService _shopServise;
 
-        public OrderServises(AppDbConection context, IUserServise userServise, IShopServise shopServise)
+        public OrderService(AppDbConection context, IUserService userServise, IShopService shopServise)
         {
             _context = context;
             _userServise = userServise;

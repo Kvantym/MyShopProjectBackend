@@ -4,7 +4,7 @@ using MyShopProjectBackend.Models.Shop;
 
 namespace MyShopProjectBackend.Servises.Interface
 {
-    public interface IShopServise
+    public interface IShopService
     {
         public Task CreateShopAsync(CreateShopModel model, string ownerId);
         public Task UpdateShopAsync(UpdateShopModel model, string ownerId);

@@ -3,7 +3,7 @@ using MyShopProjectBackend.Models.Review;
 
 namespace MyShopProjectBackend.Servises.Interface
 {
-    public interface IReviewServise
+    public interface IReviewService
     {
         public Task AddReviewAsync(CreateReviewModel model, string userId); 
         public Task UpdateReviewAsync(UpdateReviewModel model, string userId); 

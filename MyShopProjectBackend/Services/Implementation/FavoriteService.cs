@@ -8,16 +8,16 @@ using MyShopProjectBackend.Servises.Interface;
 using NLog;
 using ILogger = NLog.ILogger;
 
-namespace MyShopProjectBackend.Servises
+namespace MyShopProjectBackend.Services.Implementation
 {
-    public class FavoriteServises : IFavoriteServises
+    public class FavoriteService : IFavoriteService
     {
         private readonly AppDbConection _context;
         private readonly ILogger _logger = LogManager.GetCurrentClassLogger();
-        private readonly IUserServise _userServise;
-        private readonly IProductServises _productServises;
+        private readonly IUserService _userServise;
+        private readonly IProductService _productServises;
 
-        public FavoriteServises(AppDbConection context, UserManager<ApplicationUser> userManager, IUserServise userServise, IProductServises productServises)
+        public FavoriteService(AppDbConection context, UserManager<ApplicationUser> userManager, IUserService userServise, IProductService productServises)
         {
             _context = context;
             _userServise = userServise;

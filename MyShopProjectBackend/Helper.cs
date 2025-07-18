@@ -5,16 +5,16 @@ namespace MyShopProjectBackend
     public class Helper
     {
         public IAccountService AccountService { get; }
-        public ICartServises CartServises { get; }
-        public IFavoriteServises FavoriteServises { get; }
-        public IOrderServises OrderServises { get; }
-        public IProductServises ProductServises { get; }
-        public IReviewServise ReviewServise { get; }
-        public IShopServise ShopServise { get; }
-        public IUserServise UserServise { get; }
+        public ICartService CartServises { get; }
+        public IFavoriteService FavoriteServises { get; }
+        public IOrderService OrderServises { get; }
+        public IProductService ProductServises { get; }
+        public IReviewService ReviewServise { get; }
+        public IShopService ShopServise { get; }
+        public IUserService UserServise { get; }
 
 
-        public Helper(IAccountService accountService, ICartServises cartServises, IFavoriteServises favoriteServises, IOrderServises orderServises, IProductServises productServises, IReviewServise reviewServise, IShopServise shopServise, IUserServise userServise)
+        public Helper(IAccountService accountService, ICartService cartServises, IFavoriteService favoriteServises, IOrderService orderServises, IProductService productServises, IReviewService reviewServise, IShopService shopServise, IUserService userServise)
         {
             AccountService = accountService;
             CartServises = cartServises;

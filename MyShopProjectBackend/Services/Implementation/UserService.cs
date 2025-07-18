@@ -8,15 +8,15 @@ using MyShopProjectBackend.Models.User;
 using MyShopProjectBackend.Servises.Interface;
 using NLog;
 
-namespace MyShopProjectBackend.Servises
+namespace MyShopProjectBackend.Servises.Implementation
 {
-    public class UserServise : IUserServise
+    public class UserService : IUserService
     {
         private readonly AppDbConection _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private static readonly NLog.ILogger _logger = LogManager.GetCurrentClassLogger();
 
-        public UserServise(AppDbConection context, UserManager<ApplicationUser> userManager)
+        public UserService(AppDbConection context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
             _userManager = userManager;

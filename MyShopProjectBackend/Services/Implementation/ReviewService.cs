@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿
 using Microsoft.EntityFrameworkCore;
 using MyShopProjectBackend.Db;
 using MyShopProjectBackend.DTO;
@@ -8,16 +8,16 @@ using MyShopProjectBackend.Models.Review;
 using MyShopProjectBackend.Servises.Interface;
 using NLog;
 
-namespace MyShopProjectBackend.Servises
+namespace MyShopProjectBackend.Services.Implementation
 {
-    public class ReviewServise : IReviewServise
+    public class ReviewService : IReviewService
     {
         private readonly AppDbConection _context;
         private readonly NLog.ILogger _logger = LogManager.GetCurrentClassLogger();
-        private readonly IUserServise _userServise;
-        private readonly IProductServises _productServises;
+        private readonly IUserService _userServise;
+        private readonly IProductService _productServises;
 
-        public ReviewServise(AppDbConection context, IUserServise userServise, IProductServises productServises)
+        public ReviewService(AppDbConection context, IUserService userServise, IProductService productServises)
         {
             _context = context;
             _userServise = userServise;

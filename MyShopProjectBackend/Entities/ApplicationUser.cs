@@ -7,6 +7,6 @@ namespace MyShopProjectBackend.Entities
     {
         public ICollection<Shop> Shops { get; set; } = new List<Shop>();
         public ICollection<Order> Orders { get; set; } = new List<Order>();
-        public ICollection<FavouriteProduct> FavoritProducts { get; set; } = new List<FavouriteProduct>();
+        public ICollection<FavouriteProduct> FavoriteProducts { get; set; } = new List<FavouriteProduct>();
     }
 }

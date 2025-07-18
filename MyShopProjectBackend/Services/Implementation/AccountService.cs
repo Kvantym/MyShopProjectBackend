@@ -11,16 +11,16 @@ using System.Security.Claims;
 using System.Text;
 using ILogger = NLog.ILogger;
 
-namespace MyShopProjectBackend.Servises
+namespace MyShopProjectBackend.Services.Implementation
 {
-    public class AccountServise : IAccountService
+    public class AccountService : IAccountService
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IConfiguration _configuration;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
-        public AccountServise(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IConfiguration configuration)
+        public AccountService(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IConfiguration configuration)
         {
             _userManager = userManager;
             _signInManager = signInManager;

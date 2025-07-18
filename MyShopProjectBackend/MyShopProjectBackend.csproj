@@ -22,6 +22,9 @@
 
   <ItemGroup>
     <Folder Include="Migrations\" />
+    <Folder Include="Infrastructure\" />
+    <Folder Include="Repository\" />
+    <Folder Include="Domain_Model\" />
   </ItemGroup>
 
 </Project>

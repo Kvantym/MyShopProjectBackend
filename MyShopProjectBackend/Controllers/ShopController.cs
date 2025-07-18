@@ -11,9 +11,9 @@ namespace MyShopProjectBackend.Controllers
     [Route("api/shop")]
     public class ShopController : ControllerBase
     {
-        private readonly IShopServise _shopServise;
+        private readonly IShopService _shopServise;
 
-        public ShopController(IShopServise shopServise)
+        public ShopController(IShopService shopServise)
         {
             _shopServise = shopServise;
         }
@@ -31,7 +31,7 @@ namespace MyShopProjectBackend.Controllers
         }
 
         [Authorize(Roles = "Seller")]
-        [HttpPost("update")]
+        [HttpPut]
         public async Task<IActionResult> UpdateShop([FromBody] UpdateShopModel model)//готово
         {
             await _shopServise.UpdateShopAsync(model, User.GetUserId());

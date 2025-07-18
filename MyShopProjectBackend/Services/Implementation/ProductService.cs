@@ -4,22 +4,21 @@ using MyShopProjectBackend.Db;
 using MyShopProjectBackend.DTO;
 using MyShopProjectBackend.Entities;
 using MyShopProjectBackend.Exceptions;
-using MyShopProjectBackend.Models;
 using MyShopProjectBackend.Models.Product;
 using MyShopProjectBackend.Servises.Interface;
 using NLog;
 using ILogger = NLog.ILogger;
 
-namespace MyShopProjectBackend.Servises
+namespace MyShopProjectBackend.Services.Implementation
 {
-    public class ProductServises : IProductServises
+    public class ProductService : IProductService
     {
         private readonly AppDbConection _context;
         private readonly ILogger _logger = LogManager.GetCurrentClassLogger();
-        private readonly IShopServise _shopServise;
-        private readonly IUserServise _userServise;
+        private readonly IShopService _shopServise;
+        private readonly IUserService _userServise;
 
-        public ProductServises(AppDbConection conection, UserManager<ApplicationUser> userManager, IShopServise shopServise,IUserServise userServise)
+        public ProductService(AppDbConection conection, UserManager<ApplicationUser> userManager, IShopService shopServise,IUserService userServise)
         {
             _context = conection;
             _shopServise = shopServise;
@@ -165,7 +164,66 @@ namespace MyShopProjectBackend.Servises
             }
             return products;
         }
-  
+        public async Task<List<ProductDto>> GetProductsAsync()
+        {
+            var products = await _context.products.ToListAsync();
+
+            var productsDtos = new List<ProductDto>();
+            foreach (var product in products) {
+
+                var dto = new ProductDto
+                {
+                    Id = product.Id,
+                    Name = product.Name,
+                    Description = product.Description,
+                    Category = product.Category,
+                    Price = product.Price,
+                    ShopId = product.ShopId,
+                    Quantity = product.Quantity,
+                    ImageData = product.ImageData,
+                    ImageMimeType = product.ImageMimeType
+                };
+                productsDtos.Add(dto);
+            }
+            return productsDtos;
+        }
+        public async Task<List<ProductDto>> SearchProductsByNameAsync(string name)
+        {
+            return await _context.products
+                .Where(p => p.Name.ToLower().Contains(name.ToLower()))
+                .Select(p => new ProductDto
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Description = p.Description,
+                    Category = p.Category,
+                    Price = p.Price,
+                    ShopId = p.ShopId,
+                    Quantity = p.Quantity,
+                    ImageData = p.ImageData,
+                    ImageMimeType = p.ImageMimeType
+                })
+                .ToListAsync();
+        }
+        public async Task<ProductDto> GetProductsByIdAsync(int productId)
+        {
+            var product = await GetProductOrThrowIdAsync(productId);
+
+            var productDto = new ProductDto
+            {Id = product.Id,
+                Name = product.Name,
+                Description = product.Description,
+                Category = product.Category,
+                Price = product.Price,
+                ShopId = product.ShopId,
+                Quantity = product.Quantity,
+                ImageData = product.ImageData,
+                ImageMimeType = product.ImageMimeType
+            };
+            return productDto;
+        }
+
+
 
     }
 }

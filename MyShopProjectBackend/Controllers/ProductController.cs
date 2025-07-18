@@ -10,9 +10,10 @@ namespace MyShopProjectBackend.Controllers
     [Route("api/product")]
     public class ProductController : ControllerBase
     {
-        private readonly IProductServises _productServises;
-        public ProductController(IProductServises productServises)
-        {;
+        private readonly IProductService _productServises;
+        public ProductController(IProductService productServises)
+        {
+            ;
             _productServises = productServises;
         }
         [HttpGet("status")]
@@ -26,7 +27,7 @@ namespace MyShopProjectBackend.Controllers
         }
 
         [Authorize(Roles = "Seller")]
-        [HttpPost("update")]
+        [HttpPut]
         public async Task<IActionResult> UpdateProduct([FromBody] UpdateProductModel model)//готово
         {
             await _productServises.UpdateProductAsync(model, User.GetUserId());
@@ -40,7 +41,7 @@ namespace MyShopProjectBackend.Controllers
             await _productServises.DeleteProductAsync(productId, User.GetUserId());
             return Ok(new { message = "Товар успішно видалено" });
         }
-        
+
         [HttpGet("by-name/{productName}")]
         public async Task<IActionResult> GetProductByName(string productName)//готово
         {
@@ -50,7 +51,25 @@ namespace MyShopProjectBackend.Controllers
         [HttpGet("by-shop/{shopId}")]
         public async Task<IActionResult> GetProductsByShop(int shopId)//готово
         {
-           var result = await _productServises.GetProductsByShopAsync(shopId);
+            var result = await _productServises.GetProductsByShopAsync(shopId);
+            return Ok(result);
+        }
+        [HttpGet("products")]
+        public async Task<IActionResult> GetProducts()
+        {
+            var result = await _productServises.GetProductsAsync();
+            return Ok(result);
+        }
+        [HttpGet("search")]
+        public async Task<IActionResult> Search([FromQuery] string name)
+        {
+            var products = await _productServises.SearchProductsByNameAsync(name);
+            return Ok(products);
+        }
+        [HttpGet("{productId}")]
+        public async Task<IActionResult> GetProductById(int productId)//готово
+        {
+            var result = await _productServises.GetProductsByIdAsync(productId);
             return Ok(result);
         }
     }

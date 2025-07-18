@@ -2,8 +2,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MyShopProjectBackend.Entities;
-using MyShopProjectBackend.Exceptions;
-using MyShopProjectBackend.Extensions;
 using MyShopProjectBackend.Models.User;
 using MyShopProjectBackend.Servises.Interface;
 
@@ -19,7 +17,6 @@ namespace MyShopProjectBackend.Controllers
         public AccountController(IAccountService accountService)
         {
             _accountService = accountService;
-
         }
 
         [HttpGet("status")]

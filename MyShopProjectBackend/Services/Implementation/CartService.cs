@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using MyShopProjectBackend.Db;
 using MyShopProjectBackend.DTO;
 using MyShopProjectBackend.Entities;
@@ -10,16 +9,17 @@ using NLog;
 using ILogger = NLog.ILogger;
 
 
-namespace MyShopProjectBackend.Servises
+namespace MyShopProjectBackend.Services.Implementation
 {
-    public class CartServises : ICartServises
+    public class CartService : ICartService
     {
         private readonly AppDbConection _context;
         private readonly ILogger _logger = LogManager.GetCurrentClassLogger();
-        private readonly IUserServise _userServise;
-        private readonly IProductServises _productServises;
+        private readonly IUserService _userServise;
+        private readonly IProductService _productServises;
 
-        public CartServises(AppDbConection context, IUserServise userServise, IProductServises productServises)
+
+        public CartService(AppDbConection context, IUserService userServise, IProductService productServises)
         {
             _context = context;
             _userServise = userServise;
@@ -30,7 +30,7 @@ namespace MyShopProjectBackend.Servises
         {
             _logger.Info($"{nameof(AddToCartAsync)}: Виклик методу");
           
-
+            //var user = await _cartServisesHelper.UserServise.GetUserOrThrowAsyncId(userId);
             var user = await _userServise.GetUserOrThrowAsyncId(userId);
 
             var product = await _productServises.GetProductOrThrowIdAsync(model.ProductId);
@@ -178,7 +178,7 @@ namespace MyShopProjectBackend.Servises
             {
                 UserId = cart.UserId,
                 Id = cart.Id,
-                Items = cartItems.Select(c => new DTO.CartItemDto
+                Items = cartItems.Select(c => new CartItemDto
                 {
                     Id = c.Id,
                     Quantity = c.Quantity,

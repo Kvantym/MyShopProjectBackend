@@ -10,9 +10,9 @@ namespace MyShopProjectBackend.Controllers
     [Route("api/order")]
     public class OrderController : ControllerBase
     {
-        private readonly IOrderServises _orderServises;
+        private readonly IOrderService _orderServises;
 
-        public OrderController(IOrderServises orderServises)
+        public OrderController(IOrderService orderServises)
         {
             _orderServises = orderServises;
         }
@@ -36,7 +36,7 @@ namespace MyShopProjectBackend.Controllers
         }
 
         [Authorize(Roles = "Seller")]
-        [HttpPost("update")]
+        [HttpPut]
         public async Task<IActionResult> UpdateOrderStatus(UpdateOrderModel model)//готово
         {
             await _orderServises.UpdateOrderStatusAsync(model, User.GetUserId());

@@ -11,9 +11,9 @@ namespace MyShopProjectBackend.Controllers
     [Route("api/[controller]")]
     public class UserController : ControllerBase
     {
-        private readonly IUserServise _userServise;
+        private readonly IUserService _userServise;
 
-        public UserController(IUserServise userServise)
+        public UserController(IUserService userServise)
         {
             _userServise = userServise;
         }
@@ -36,7 +36,7 @@ namespace MyShopProjectBackend.Controllers
         }
 
         [Authorize]
-        [HttpPost("update")]
+        [HttpPut]
         public async Task<IActionResult> UpdateUser([FromBody] UpdateUserModel model)//готово
         {
             await _userServise.UpdateUserAsync(model, User.GetUserId());

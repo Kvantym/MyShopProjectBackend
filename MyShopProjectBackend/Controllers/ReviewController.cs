@@ -10,9 +10,9 @@ namespace MyShopProjectBackend.Controllers
     [Route("api/review")]
     public class ReviewController : Controller
     {
-        private readonly IReviewServise _reviewServise;
+        private readonly IReviewService _reviewServise;
 
-        public ReviewController(IReviewServise reviewServise)
+        public ReviewController(IReviewService reviewServise)
         {
             _reviewServise = reviewServise;
         }
@@ -29,7 +29,7 @@ namespace MyShopProjectBackend.Controllers
         }
 
         [Authorize]
-        [HttpPost("update")]
+        [HttpPut]
         public async Task<IActionResult> UpdateReview([FromBody] UpdateReviewModel model)//готово
         {
             await _reviewServise.UpdateReviewAsync(model, User.GetUserId());

@@ -6,7 +6,7 @@ using MyShopProjectBackend.Models.User;
 
 namespace MyShopProjectBackend.Servises.Interface
 {
-    public interface IUserServise
+    public interface IUserService
     {
         public Task<ApplicationUser> GetUserByNameAsync(string userName);
         public Task UpdateUserAsync(UpdateUserModel model, string userId, string? oldPassword = null);

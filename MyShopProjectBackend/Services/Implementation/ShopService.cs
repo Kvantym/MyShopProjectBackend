@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿
 using Microsoft.EntityFrameworkCore;
 using MyShopProjectBackend.Db;
 using MyShopProjectBackend.DTO;
@@ -8,19 +8,20 @@ using MyShopProjectBackend.Models.Shop;
 using MyShopProjectBackend.Servises.Interface;
 using NLog;
 
-namespace MyShopProjectBackend.Servises
+namespace MyShopProjectBackend.Services.Implementation
 {
-    public class ShopServise : IShopServise
+    public class ShopService : IShopService
     {
         private readonly AppDbConection _context;
         private readonly NLog.ILogger _logger =LogManager.GetCurrentClassLogger();
-        private readonly IUserServise _userServise;
+        private readonly IUserService _userServise;
 
 
 
-        public ShopServise(AppDbConection context, IUserServise userServise)
+        public ShopService(AppDbConection context, IUserService userServise)
         {
             _context = context;
+            _userServise = userServise;
         }
 
         public async Task CreateShopAsync(CreateShopModel model, string ownerId)//готово

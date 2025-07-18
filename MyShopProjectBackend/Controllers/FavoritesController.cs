@@ -11,9 +11,9 @@ namespace MyShopProjectBackend.Controllers
     [Route("api/favorites")]
     public class FavoritesController : ControllerBase
     {
-        private readonly IFavoriteServises _favoriteServises;
+        private readonly IFavoriteService _favoriteServises;
 
-        public FavoritesController(IFavoriteServises favoriteServises)
+        public FavoritesController(IFavoriteService favoriteServises)
         {
             _favoriteServises = favoriteServises;
         }

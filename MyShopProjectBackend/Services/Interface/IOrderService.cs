@@ -4,7 +4,7 @@ using MyShopProjectBackend.Models.Order;
 
 namespace MyShopProjectBackend.Servises.Interface
 {
-    public interface IOrderServises
+    public interface IOrderService
     {
         public Task<List<OrderDto>> GetOrdersForUserAsync(string buyerId, string buyerName);
         public Task<OrderDto?> GetOrderByIdAsync(int orderId, string sellerId);

@@ -8,7 +8,8 @@ using MyShopProjectBackend.Db;
 using MyShopProjectBackend.Entities;
 using MyShopProjectBackend.Helpers;
 using MyShopProjectBackend.Middleware;
-using MyShopProjectBackend.Servises;
+using MyShopProjectBackend.Services.Implementation;
+using MyShopProjectBackend.Servises.Implementation;
 using MyShopProjectBackend.Servises.Interface;
 using NLog;
 using NLog.Web;
@@ -39,6 +40,18 @@ namespace MyShopProjectBackend
             var logger = NLog.LogManager.GetCurrentClassLogger();
 
             var builder = WebApplication.CreateBuilder(args);
+            // Додаємо CORS-політику з іменем
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAngularDevClient", policy =>
+                {
+                    policy.WithOrigins("http://localhost:4200")
+                          .AllowAnyHeader()
+                          .AllowAnyMethod()
+                          .AllowCredentials(); // Якщо ти працюєш з авторизацією
+                });
+            });
+
 
             builder.Logging.ClearProviders();
             builder.Logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
@@ -91,15 +104,15 @@ namespace MyShopProjectBackend
             });
 
             // Реєстрація сервісів
-            builder.Services.AddScoped<CartServisesHelper>();
-            builder.Services.AddScoped<IAccountService, AccountServise>();
-            builder.Services.AddScoped<ICartServises, CartServises>();
-            builder.Services.AddScoped<IFavoriteServises, FavoriteServises>();
-            builder.Services.AddScoped<IOrderServises, OrderServises>();
-            builder.Services.AddScoped<IProductServises, ProductServises>();
-            builder.Services.AddScoped<IReviewServise, ReviewServise>();
-            builder.Services.AddScoped<IUserServise, UserServise>();
-            builder.Services.AddScoped<IShopServise, ShopServise>();
+           // builder.Services.AddScoped<CartServisesHelper>();
+            builder.Services.AddScoped<IAccountService, AccountService>();
+            builder.Services.AddScoped<ICartService, CartService>();
+            builder.Services.AddScoped<IFavoriteService, FavoriteService>();
+            builder.Services.AddScoped<IOrderService, OrderService>();
+            builder.Services.AddScoped<IProductService, ProductService>();
+            builder.Services.AddScoped<IReviewService, ReviewService>();
+            builder.Services.AddScoped<IUserService, UserService>();
+            builder.Services.AddScoped<IShopService, ShopService>();
          
 
             builder.Services.AddHttpContextAccessor();
@@ -134,12 +147,15 @@ namespace MyShopProjectBackend
             });
 
             var app = builder.Build();
+            app.UseCors("AllowAngularDevClient");
+
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
                
                 SeedRolesAsync(services).GetAwaiter().GetResult();
             }
+
 
             // Конвеєр HTTP запитів
             if (app.Environment.IsDevelopment())
