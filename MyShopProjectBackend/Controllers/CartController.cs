@@ -11,12 +11,12 @@ namespace MyShopProjectBackend.Controllers
     public class CartController : ControllerBase
     {
 
-        private readonly ICartService _cartServises;
+        private readonly ICartService _cartService;
 
 
-        public CartController(ICartService cartServises)
+        public CartController(ICartService cartService)
         {
-            _cartServises = cartServises;
+            _cartService = cartService;
         }
         [HttpGet("status")]
         public IActionResult Get() => Ok("API працює");//готово
@@ -25,7 +25,7 @@ namespace MyShopProjectBackend.Controllers
         [HttpGet]
         public async Task<IActionResult> GetCart()//готово
         {
-            var result = await _cartServises.GetCartAsync(User.GetUserId());
+            var result = await _cartService.GetCartAsync(User.GetUserId());
             return Ok(result);
         }
 
@@ -33,14 +33,14 @@ namespace MyShopProjectBackend.Controllers
         [HttpPost]
         public async Task<IActionResult> AddToCart([FromBody]AddToCartModel model)//готово
         {
-            await _cartServises.AddToCartAsync(model, User.GetUserId());
+            await _cartService.AddToCartAsync(model, User.GetUserId());
             return Ok(new { message = "Товар успішно додано до кошика" });
         }
         [Authorize]
         [HttpPut]
         public async Task<IActionResult> UpdateCart([FromBody]UpdateCartModel model)//готово
         {
-            await _cartServises.UpdateCartAsync(model, User.GetUserId());
+            await _cartService.UpdateCartAsync(model, User.GetUserId());
             return Ok(new { message = "Кошик успішно оновлено" });
         }
 
@@ -48,7 +48,7 @@ namespace MyShopProjectBackend.Controllers
         [HttpDelete("{productId}")]
         public async Task<IActionResult> RemoveFromCart(int productId)//готово
         {
-            await _cartServises.RemoveFromCartAsync(productId, User.GetUserId());
+            await _cartService.RemoveFromCartAsync(productId, User.GetUserId());
             return Ok(new { message = "Товар успішно видалено з кошика" });
         }
 
@@ -56,7 +56,7 @@ namespace MyShopProjectBackend.Controllers
         [HttpDelete("clear")]
         public async Task<IActionResult> ClearCart()//готово
         {
-            await _cartServises.ClearCartAsync(User.GetUserId());
+            await _cartService.ClearCartAsync(User.GetUserId());
             return Ok(new { message = "Кошик успішно очищено" });
         }
 
@@ -64,7 +64,7 @@ namespace MyShopProjectBackend.Controllers
         [HttpPost("checkout")]
         public async Task<IActionResult> Checkout()//готово
         {
-            await _cartServises.CheckoutAsync(User.GetUserId());
+            await _cartService.CheckoutAsync(User.GetUserId());
             return Ok(new { message = "Замовлення успішно оформлено" });
         }
     }

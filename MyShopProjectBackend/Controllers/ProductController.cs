@@ -10,11 +10,11 @@ namespace MyShopProjectBackend.Controllers
     [Route("api/product")]
     public class ProductController : ControllerBase
     {
-        private readonly IProductService _productServises;
-        public ProductController(IProductService productServises)
+        private readonly IProductService _productService;
+        public ProductController(IProductService productService)
         {
             ;
-            _productServises = productServises;
+            _productService = productService;
         }
         [HttpGet("status")]
         public IActionResult Get() => Ok("API працює");//готово
@@ -22,7 +22,7 @@ namespace MyShopProjectBackend.Controllers
         [HttpPost()]
         public async Task<IActionResult> AddProduct([FromBody] CreateProductModel model)//готово
         {
-            await _productServises.AddProductAsync(model, User.GetUserId());
+            await _productService.AddProductAsync(model, User.GetUserId());
             return Ok(new { message = "Товар успішно додано" });
         }
 
@@ -30,7 +30,7 @@ namespace MyShopProjectBackend.Controllers
         [HttpPut]
         public async Task<IActionResult> UpdateProduct([FromBody] UpdateProductModel model)//готово
         {
-            await _productServises.UpdateProductAsync(model, User.GetUserId());
+            await _productService.UpdateProductAsync(model, User.GetUserId());
             return Ok(new { message = "Товар оновлено успішно" });
         }
 
@@ -38,38 +38,38 @@ namespace MyShopProjectBackend.Controllers
         [HttpDelete("{productId}")]
         public async Task<IActionResult> DeleteProduct(int productId)//готово
         {
-            await _productServises.DeleteProductAsync(productId, User.GetUserId());
+            await _productService.DeleteProductAsync(productId, User.GetUserId());
             return Ok(new { message = "Товар успішно видалено" });
         }
 
         [HttpGet("by-name/{productName}")]
         public async Task<IActionResult> GetProductByName(string productName)//готово
         {
-            var result = await _productServises.GetProductsByNameAsync(productName);
+            var result = await _productService.GetProductsByNameAsync(productName);
             return Ok(result);
         }
         [HttpGet("by-shop/{shopId}")]
         public async Task<IActionResult> GetProductsByShop(int shopId)//готово
         {
-            var result = await _productServises.GetProductsByShopAsync(shopId);
+            var result = await _productService.GetProductsByShopAsync(shopId);
             return Ok(result);
         }
         [HttpGet("products")]
         public async Task<IActionResult> GetProducts()
         {
-            var result = await _productServises.GetProductsAsync();
+            var result = await _productService.GetProductsAsync();
             return Ok(result);
         }
         [HttpGet("search")]
         public async Task<IActionResult> Search([FromQuery] string name)
         {
-            var products = await _productServises.SearchProductsByNameAsync(name);
+            var products = await _productService.SearchProductsByNameAsync(name);
             return Ok(products);
         }
         [HttpGet("{productId}")]
         public async Task<IActionResult> GetProductById(int productId)//готово
         {
-            var result = await _productServises.GetProductsByIdAsync(productId);
+            var result = await _productService.GetProductsByIdAsync(productId);
             return Ok(result);
         }
     }

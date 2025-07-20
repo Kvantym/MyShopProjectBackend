@@ -10,11 +10,11 @@ namespace MyShopProjectBackend.Controllers
     [Route("api/order")]
     public class OrderController : ControllerBase
     {
-        private readonly IOrderService _orderServises;
+        private readonly IOrderService _orderService;
 
-        public OrderController(IOrderService orderServises)
+        public OrderController(IOrderService orderService)
         {
-            _orderServises = orderServises;
+            _orderService = orderService;
         }
         [HttpGet("status")]
         public IActionResult Get() => Ok("API працює");//готово
@@ -23,7 +23,7 @@ namespace MyShopProjectBackend.Controllers
         [HttpGet("by-user")]
         public async Task<IActionResult> GetOrdersForUser(string buyerName)//готово
         {
-            var result = await _orderServises.GetOrdersForUserAsync(buyerName, User.GetUserId());
+            var result = await _orderService.GetOrdersForUserAsync(buyerName, User.GetUserId());
             return Ok(result);
         }
 
@@ -31,7 +31,7 @@ namespace MyShopProjectBackend.Controllers
         [HttpGet("by-Id")]
         public async Task<IActionResult> GetOrderById(int orderId)//готово
         {
-            var result = await _orderServises.GetOrderByIdAsync(orderId, User.GetUserId()); 
+            var result = await _orderService.GetOrderByIdAsync(orderId, User.GetUserId()); 
             return Ok(result);
         }
 
@@ -39,7 +39,7 @@ namespace MyShopProjectBackend.Controllers
         [HttpPut]
         public async Task<IActionResult> UpdateOrderStatus(UpdateOrderModel model)//готово
         {
-            await _orderServises.UpdateOrderStatusAsync(model, User.GetUserId());
+            await _orderService.UpdateOrderStatusAsync(model, User.GetUserId());
             return Ok(new { message = "Статус замовлення оновлено", newStatus = model.Status });
         }
 
@@ -47,7 +47,7 @@ namespace MyShopProjectBackend.Controllers
         [HttpDelete("{orderId}")]
         public async Task<IActionResult> DeleteOrder(int orderId)//готово
         {
-            await _orderServises.DeleteOrderAsync(orderId, User.GetUserId());
+            await _orderService.DeleteOrderAsync(orderId, User.GetUserId());
             return Ok(new { message = "Замовлення видалено" });
         }
 
@@ -55,7 +55,7 @@ namespace MyShopProjectBackend.Controllers
         [HttpGet("orders")]
         public async Task<IActionResult> GetAllOrders(int shopId)
         {
-          var result = await _orderServises.GetAllOrdersAsync(shopId, User.GetUserId()); 
+          var result = await _orderService.GetAllOrdersAsync(shopId, User.GetUserId()); 
             return Ok(result);
         }
     }

@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using MyShopProjectBackend.Db;
 using MyShopProjectBackend.DTO;
 using MyShopProjectBackend.Entities;
@@ -15,23 +14,23 @@ namespace MyShopProjectBackend.Services.Implementation
     {
         private readonly AppDbConection _context;
         private readonly ILogger _logger = LogManager.GetCurrentClassLogger();
-        private readonly IShopService _shopServise;
-        private readonly IUserService _userServise;
+        private readonly IShopService _shopService;
+        private readonly IUserService _userService;
 
-        public ProductService(AppDbConection conection, UserManager<ApplicationUser> userManager, IShopService shopServise,IUserService userServise)
+        public ProductService(AppDbConection conection, IShopService shopService,IUserService userService)
         {
             _context = conection;
-            _shopServise = shopServise;
-            _userServise = userServise;
+            _shopService = shopService;
+            _userService = userService;
         }
 
         public async Task AddProductAsync(CreateProductModel model, string ownerId) //готово
         {
             _logger.Info($"{nameof(AddProductAsync)}: Виклик методу");
 
-            var seller = await _userServise.GetUserOrThrowAsyncId(ownerId);
+            var seller = await _userService.GetUserOrThrowAsyncId(ownerId);
 
-            var shop = await _shopServise.EnsureSellerOwnsShopAsync(seller, model.ShopId);
+            var shop = await _shopService.EnsureSellerOwnsShopAsync(seller, model.ShopId);
 
             var product = new Product
             {
@@ -57,9 +56,9 @@ namespace MyShopProjectBackend.Services.Implementation
 
             var product = await GetProductOrThrowIdAsync(productId);
 
-            var seller = await _userServise.GetUserOrThrowAsyncId(ownerId);
+            var seller = await _userService.GetUserOrThrowAsyncId(ownerId);
 
-            var shop = await _shopServise.EnsureSellerOwnsShopForProductAsync(seller, product);
+            var shop = await _shopService.EnsureSellerOwnsShopForProductAsync(seller, product);
 
             _context.products.Remove(product);
             await _context.SaveChangesAsync();
@@ -81,7 +80,7 @@ namespace MyShopProjectBackend.Services.Implementation
         {
             _logger.Info($"{nameof(GetProductsByShopAsync)}: Виклик методу");
 
-            var shop = await _shopServise.GetShopOrThrowAsync(shopId);
+            var shop = await _shopService.GetShopOrThrowAsync(shopId);
 
             var products = await CreateProductDtos(shop);
 
@@ -94,9 +93,9 @@ namespace MyShopProjectBackend.Services.Implementation
             _logger.Info($"{nameof(UpdateProductAsync)}: Виклик методу");
             var product = await GetProductOrThrowIdAsync(model.ProductId);
 
-            var seller = await _userServise.GetUserOrThrowAsyncId(ownerId);
+            var seller = await _userService.GetUserOrThrowAsyncId(ownerId);
 
-            var shop = await _shopServise.EnsureSellerOwnsShopForProductAsync(seller, product);
+            var shop = await _shopService.EnsureSellerOwnsShopForProductAsync(seller, product);
 
             product.Name = model.Name;
             product.Description = model.Description;

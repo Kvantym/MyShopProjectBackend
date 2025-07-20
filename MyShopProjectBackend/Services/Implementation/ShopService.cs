@@ -1,5 +1,4 @@
-﻿
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using MyShopProjectBackend.Db;
 using MyShopProjectBackend.DTO;
 using MyShopProjectBackend.Entities;
@@ -14,23 +13,21 @@ namespace MyShopProjectBackend.Services.Implementation
     {
         private readonly AppDbConection _context;
         private readonly NLog.ILogger _logger =LogManager.GetCurrentClassLogger();
-        private readonly IUserService _userServise;
+        private readonly IUserService _userService;
 
-
-
-        public ShopService(AppDbConection context, IUserService userServise)
+        public ShopService(AppDbConection context, IUserService userService)
         {
             _context = context;
-            _userServise = userServise;
+            _userService = userService;
         }
 
         public async Task CreateShopAsync(CreateShopModel model, string ownerId)//готово
         {
             _logger.Info($"{nameof(CreateShopAsync)}: Виклик методу");
 
-            var seller = await _userServise.GetUserOrThrowAsyncId(ownerId);
+            var seller = await _userService.GetUserOrThrowAsyncId(ownerId);
 
-            var isSeller =  await _userServise.EnsureUserHasRoleOrThrowAsync(seller, "Seller");
+            var isSeller =  await _userService.EnsureUserHasRoleOrThrowAsync(seller, "Seller");
 
             var shop = new Shop
             {
@@ -49,7 +46,7 @@ namespace MyShopProjectBackend.Services.Implementation
         {
             _logger.Info($"{nameof(DeleteShopAsync)}: Виклик методу");
 
-            var user = await _userServise.GetUserOrThrowAsyncId(ownerId);
+            var user = await _userService.GetUserOrThrowAsyncId(ownerId);
 
             var shop = await GetShopOrThrowAsync(shopId);
 
@@ -70,7 +67,7 @@ namespace MyShopProjectBackend.Services.Implementation
             _logger.Info($"{nameof(GetAllShopsAsync)}: Виклик методу");
             var shops = await _context.shops.Where(s => s.OwnerId == OwnerId).ToListAsync();
 
-            var user = await _userServise.GetUserOrThrowAsyncId(OwnerId);
+            var user = await _userService.GetUserOrThrowAsyncId(OwnerId);
 
             if (shops == null || !shops.Any())
             {
@@ -109,7 +106,7 @@ namespace MyShopProjectBackend.Services.Implementation
         public async Task UpdateShopAsync(UpdateShopModel model, string ownerId)//готово
         {
             _logger.Info($"{nameof(UpdateShopAsync)}: Виклик методу");
-            var user = await _userServise.GetUserOrThrowAsyncId(ownerId);
+            var user = await _userService.GetUserOrThrowAsyncId(ownerId);
             var shop = await GetShopOrThrowAsync(model.ShopId);
 
             if (shop.OwnerId != user.Id)

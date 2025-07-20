@@ -1,5 +1,4 @@
-﻿
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using MyShopProjectBackend.Db;
 using MyShopProjectBackend.DTO;
 using MyShopProjectBackend.Entities;
@@ -14,22 +13,22 @@ namespace MyShopProjectBackend.Services.Implementation
     {
         private readonly AppDbConection _context;
         private readonly NLog.ILogger _logger = LogManager.GetCurrentClassLogger();
-        private readonly IUserService _userServise;
-        private readonly IProductService _productServises;
+        private readonly IUserService _userService;
+        private readonly IProductService _productService;
 
-        public ReviewService(AppDbConection context, IUserService userServise, IProductService productServises)
+        public ReviewService(AppDbConection context, IUserService userService, IProductService productService)
         {
             _context = context;
-            _userServise = userServise;
-            _productServises = productServises;
+            _userService = userService;
+            _productService = productService;
         }
 
         public async Task AddReviewAsync(CreateReviewModel model, string userId)
         {
             _logger.Info($"{nameof(AddReviewAsync)}: Виклик методу");
-            var user = await _userServise.GetUserOrThrowAsyncId(userId);
+            var user = await _userService.GetUserOrThrowAsyncId(userId);
 
-            var product = await _productServises.GetProductOrThrowIdAsync(model.ProductId);
+            var product = await _productService.GetProductOrThrowIdAsync(model.ProductId);
 
             var review = new ProductReview
             {
@@ -48,7 +47,7 @@ namespace MyShopProjectBackend.Services.Implementation
         public async Task DeleteReviewAsync(int reviewId, string userId)
         {
             _logger.Info($"{nameof(DeleteReviewAsync)}: Виклик методу");
-            var user = await _userServise.GetUserOrThrowAsyncId(userId);
+            var user = await _userService.GetUserOrThrowAsyncId(userId);
 
             var review = await GetReviewOrThrowAsync(reviewId);
 
@@ -68,7 +67,7 @@ namespace MyShopProjectBackend.Services.Implementation
         {
             _logger.Info($"{nameof(GetReviewsByProductAsync)}: Виклик методу");
 
-            var product = await _productServises.GetProductOrThrowIdAsync(productId);
+            var product = await _productService.GetProductOrThrowIdAsync(productId);
 
             var reviewsEntities = await _context.productReviews
                 .Where(r => r.ProductId == productId)
@@ -80,7 +79,7 @@ namespace MyShopProjectBackend.Services.Implementation
             }
 
             var userIds = reviewsEntities.Select(r => r.UserId).Distinct().ToList();
-            var users = await _userServise.GetUsersByIdsAsync(userIds);
+            var users = await _userService.GetUsersByIdsAsync(userIds);
 
             var reviews = reviewsEntities.Select(r => new ReviewDto
             {
@@ -98,7 +97,7 @@ namespace MyShopProjectBackend.Services.Implementation
         public async Task UpdateReviewAsync(UpdateReviewModel model, string userId)
         {
             _logger.Info($"{nameof(UpdateReviewAsync)}: Виклик методу");
-            var user = await _userServise.GetUserOrThrowAsyncId(userId);
+            var user = await _userService.GetUserOrThrowAsyncId(userId);
 
             var review = await GetReviewOrThrowAsync(model.ReviewId);
 

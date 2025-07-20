@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using MyShopProjectBackend.Extensions;
 using MyShopProjectBackend.Models.User;
 using MyShopProjectBackend.Servises.Interface;
-using System.Security.Claims;
 
 namespace MyShopProjectBackend.Controllers
 {
@@ -11,11 +10,11 @@ namespace MyShopProjectBackend.Controllers
     [Route("api/[controller]")]
     public class UserController : ControllerBase
     {
-        private readonly IUserService _userServise;
+        private readonly IUserService _userService;
 
-        public UserController(IUserService userServise)
+        public UserController(IUserService userService)
         {
-            _userServise = userServise;
+            _userService = userService;
         }
 
         [HttpGet("status")]
@@ -24,14 +23,14 @@ namespace MyShopProjectBackend.Controllers
         [HttpGet("by-username")]
         public async Task<IActionResult> GetUserByName(string userName)//готово
         {
-            var result = await _userServise.GetUserByNameAsync(userName);
+            var result = await _userService.GetUserByNameAsync(userName);
             return Ok(result);
         }
         [Authorize]
         [HttpGet("curent")]
         public async Task<IActionResult> GetCurrentUser()//готово
         {
-            var result = await _userServise.GetUserByIdAsync(User.GetUserId());
+            var result = await _userService.GetUserByIdAsync(User.GetUserId());
             return Ok(result);
         }
 
@@ -39,7 +38,7 @@ namespace MyShopProjectBackend.Controllers
         [HttpPut]
         public async Task<IActionResult> UpdateUser([FromBody] UpdateUserModel model)//готово
         {
-            await _userServise.UpdateUserAsync(model, User.GetUserId());
+            await _userService.UpdateUserAsync(model, User.GetUserId());
 
             return Ok(new { message = "Користувача оновлено успішно" });
         }
@@ -47,7 +46,7 @@ namespace MyShopProjectBackend.Controllers
         [HttpGet("users")]
         public async Task<IActionResult> GetAllUsers()//готово
         {
-            var result = await _userServise.GetAllUsersAsync();
+            var result = await _userService.GetAllUsersAsync();
             return Ok(result);
         }
 
@@ -55,7 +54,7 @@ namespace MyShopProjectBackend.Controllers
         [HttpDelete]
         public async Task<IActionResult> DeleteUser()//готово
         {
-            await _userServise.DeleteUserAsync(User.GetUserId());
+            await _userService.DeleteUserAsync(User.GetUserId());
             return Ok(new { message = "Користувача видалено успішно" });
         }
 

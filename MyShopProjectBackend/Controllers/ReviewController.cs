@@ -10,11 +10,11 @@ namespace MyShopProjectBackend.Controllers
     [Route("api/review")]
     public class ReviewController : Controller
     {
-        private readonly IReviewService _reviewServise;
+        private readonly IReviewService _reviewService;
 
-        public ReviewController(IReviewService reviewServise)
+        public ReviewController(IReviewService reviewService)
         {
-            _reviewServise = reviewServise;
+            _reviewService = reviewService;
         }
 
         [HttpGet("status")]
@@ -24,7 +24,7 @@ namespace MyShopProjectBackend.Controllers
         [HttpPost]
         public async Task<IActionResult> AddReview([FromBody] CreateReviewModel model)//готово
         {
-            await _reviewServise.AddReviewAsync(model, User.GetUserId());
+            await _reviewService.AddReviewAsync(model, User.GetUserId());
             return Ok(new { message = "Відгук успішно додано" });
         }
 
@@ -32,21 +32,21 @@ namespace MyShopProjectBackend.Controllers
         [HttpPut]
         public async Task<IActionResult> UpdateReview([FromBody] UpdateReviewModel model)//готово
         {
-            await _reviewServise.UpdateReviewAsync(model, User.GetUserId());
+            await _reviewService.UpdateReviewAsync(model, User.GetUserId());
             return Ok(new { message = "Відгук успішно відредаговано" });
         }
         [Authorize]
         [HttpDelete("{reviewId}")]
         public async Task<IActionResult> DeleteReview(int reviewId)//готово
         {
-            await _reviewServise.DeleteReviewAsync(reviewId, User.GetUserId());
+            await _reviewService.DeleteReviewAsync(reviewId, User.GetUserId());
             return Ok(new { message = "Відгук успішно видалено" });
         }
 
         [HttpGet("reviews")]
         public async Task<IActionResult> GetReviewsByProduct(int productId)//готово
         {
-            var result = await _reviewServise.GetReviewsByProductAsync(productId);
+            var result = await _reviewService.GetReviewsByProductAsync(productId);
             return Ok(result);
         }
 

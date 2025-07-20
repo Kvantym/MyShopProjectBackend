@@ -1,17 +1,14 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MyShopProjectBackend.Db;
 using MyShopProjectBackend.Entities;
-using MyShopProjectBackend.Helpers;
 using MyShopProjectBackend.Middleware;
 using MyShopProjectBackend.Services.Implementation;
 using MyShopProjectBackend.Servises.Implementation;
 using MyShopProjectBackend.Servises.Interface;
-using NLog;
 using NLog.Web;
 using System.Security.Claims;
 using System.Text;
@@ -104,7 +101,6 @@ namespace MyShopProjectBackend
             });
 
             // –еЇстрац≥€ серв≥с≥в
-           // builder.Services.AddScoped<CartServisesHelper>();
             builder.Services.AddScoped<IAccountService, AccountService>();
             builder.Services.AddScoped<ICartService, CartService>();
             builder.Services.AddScoped<IFavoriteService, FavoriteService>();

@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using MyShopProjectBackend.Extensions;
 using MyShopProjectBackend.Models.Shop;
 using MyShopProjectBackend.Servises.Interface;
-using System.Security.Claims;
 
 namespace MyShopProjectBackend.Controllers
 {
@@ -11,11 +10,11 @@ namespace MyShopProjectBackend.Controllers
     [Route("api/shop")]
     public class ShopController : ControllerBase
     {
-        private readonly IShopService _shopServise;
+        private readonly IShopService _shopService;
 
-        public ShopController(IShopService shopServise)
+        public ShopController(IShopService shopService)
         {
-            _shopServise = shopServise;
+            _shopService = shopService;
         }
 
         [HttpGet("status")]
@@ -25,7 +24,7 @@ namespace MyShopProjectBackend.Controllers
         [HttpPost("create")]
         public async Task<IActionResult> CreateShop([FromBody] CreateShopModel model)//готово
         {
-            await _shopServise.CreateShopAsync(model, User.GetUserId());
+            await _shopService.CreateShopAsync(model, User.GetUserId());
 
             return Ok(new { message = "Магазин успішно створений" });
         }
@@ -34,7 +33,7 @@ namespace MyShopProjectBackend.Controllers
         [HttpPut]
         public async Task<IActionResult> UpdateShop([FromBody] UpdateShopModel model)//готово
         {
-            await _shopServise.UpdateShopAsync(model, User.GetUserId());
+            await _shopService.UpdateShopAsync(model, User.GetUserId());
             return Ok(new { message = "Магазин успішно оновлено" });
         }
 
@@ -43,14 +42,14 @@ namespace MyShopProjectBackend.Controllers
         [HttpDelete("{shopId}")]
         public async Task<IActionResult> DeleteShop(int shopId)//готово
         { 
-            await _shopServise.DeleteShopAsync(shopId, User.GetUserId()); 
+            await _shopService.DeleteShopAsync(shopId, User.GetUserId()); 
             return Ok(new { message = "Магазин успішно видалено" });
         }
 
         [HttpGet("shop")]
         public async Task<IActionResult> GetShopById(int shopId)//готово
         {
-            var result = await _shopServise.GetShopByIdAsync(shopId);
+            var result = await _shopService.GetShopByIdAsync(shopId);
             return Ok(result);
         }
 
@@ -58,7 +57,7 @@ namespace MyShopProjectBackend.Controllers
         [HttpGet("shops")]//готово
         public async Task<IActionResult> GetAllShops()
         {
-            var result = await _shopServise.GetAllShopsAsync(User.GetUserId());
+            var result = await _shopService.GetAllShopsAsync(User.GetUserId());
             return Ok(result);
         }
     }

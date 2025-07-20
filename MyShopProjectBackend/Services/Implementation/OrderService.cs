@@ -15,14 +15,14 @@ namespace MyShopProjectBackend.Services.Implementation
     {
         private readonly AppDbConection _context;
         private readonly ILogger _logger = LogManager.GetCurrentClassLogger();
-        private readonly IUserService _userServise;
-        private readonly IShopService _shopServise;
+        private readonly IUserService _userService;
+        private readonly IShopService _shopService;
 
-        public OrderService(AppDbConection context, IUserService userServise, IShopService shopServise)
+        public OrderService(AppDbConection context, IUserService userService, IShopService shopService)
         {
             _context = context;
-            _userServise = userServise;
-            _shopServise = shopServise;
+            _userService = userService;
+            _shopService = shopService;
         }
 
         public Task CreateOrderAsync(string userId, List<OrderItemDto> orderItems)
@@ -34,7 +34,7 @@ namespace MyShopProjectBackend.Services.Implementation
         {
             _logger.Info($"{nameof(DeleteOrderAsync)}: Виклик методу");
             
-            var user = await _userServise.GetUserOrThrowAsyncId(sellerId);
+            var user = await _userService.GetUserOrThrowAsyncId(sellerId);
 
             var order = await GetOrderWithDetailsAsync(orderId);
 
@@ -57,11 +57,11 @@ namespace MyShopProjectBackend.Services.Implementation
         public async Task<List<OrderDto>> GetAllOrdersAsync(int shopId, string sellerId)//готово
         {
             _logger.Info($"{nameof(GetAllOrdersAsync)}: Виклик методу");
-            var seller = await _userServise.GetUserOrThrowAsyncId(sellerId);
+            var seller = await _userService.GetUserOrThrowAsyncId(sellerId);
 
-            var roles = await _userServise.EnsureUserHasRoleOrThrowAsync(seller, "Seller");
+            var roles = await _userService.EnsureUserHasRoleOrThrowAsync(seller, "Seller");
 
-            var shop = await _shopServise.EnsureSellerOwnsShopAsync(seller, shopId);
+            var shop = await _shopService.EnsureSellerOwnsShopAsync(seller, shopId);
 
             var orders = await GetOrdersByShopIdAsync(seller, shop);
 
@@ -75,11 +75,11 @@ namespace MyShopProjectBackend.Services.Implementation
 
             var order = await GetOrderWithDetailsAsync(orderId);
 
-            var seller = await _userServise.GetUserOrThrowAsyncId(sellerId);
+            var seller = await _userService.GetUserOrThrowAsyncId(sellerId);
 
-            var roles = await _userServise.EnsureUserHasRoleOrThrowAsync(seller, "Seller");
+            var roles = await _userService.EnsureUserHasRoleOrThrowAsync(seller, "Seller");
 
-            _userServise.EnsureSellerOwnsOrder(order, seller);
+            _userService.EnsureSellerOwnsOrder(order, seller);
 
             _logger.Info($"{nameof(GetOrderByIdAsync)}: Успішно виконано");
             return GetOrderDtos(new List<Order> { order }).First();
@@ -89,11 +89,11 @@ namespace MyShopProjectBackend.Services.Implementation
         {
             _logger.Info($"{nameof(GetOrdersForUserAsync)}: Виклик методу");
 
-            var buyer = await _userServise.GetUserOrThrowAsyncName(buyerName);
+            var buyer = await _userService.GetUserOrThrowAsyncName(buyerName);
 
-            var seller = await _userServise.GetUserOrThrowAsyncId(sellerId);
+            var seller = await _userService.GetUserOrThrowAsyncId(sellerId);
             
-            var roles = await _userServise.EnsureUserHasRoleOrThrowAsync(seller, "Seller");
+            var roles = await _userService.EnsureUserHasRoleOrThrowAsync(seller, "Seller");
 
             var orders = await GetOrdersByBuyerAndSellerAsync(buyer, seller);
 
@@ -121,13 +121,13 @@ namespace MyShopProjectBackend.Services.Implementation
         {
             _logger.Info($"{nameof(UpdateOrderStatusAsync)}: Виклик методу");
 
-            var seller = await _userServise.GetUserOrThrowAsyncId(sellerId);
+            var seller = await _userService.GetUserOrThrowAsyncId(sellerId);
 
-            var isSeller = await _userServise.EnsureUserHasRoleOrThrowAsync(seller, "Seller");
+            var isSeller = await _userService.EnsureUserHasRoleOrThrowAsync(seller, "Seller");
 
             var order = await GetOrderWithDetailsAsync(model.OrderId);
 
-            _userServise.EnsureSellerOwnsOrder(order, seller);
+            _userService.EnsureSellerOwnsOrder(order, seller);
 
             var validStatuses = new[]
             {

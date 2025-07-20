@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using MyShopProjectBackend.Db;
 using MyShopProjectBackend.Entities;
 using MyShopProjectBackend.Exceptions;
@@ -14,23 +13,23 @@ namespace MyShopProjectBackend.Services.Implementation
     {
         private readonly AppDbConection _context;
         private readonly ILogger _logger = LogManager.GetCurrentClassLogger();
-        private readonly IUserService _userServise;
-        private readonly IProductService _productServises;
+        private readonly IUserService _userService;
+        private readonly IProductService _productService;
 
-        public FavoriteService(AppDbConection context, UserManager<ApplicationUser> userManager, IUserService userServise, IProductService productServises)
+        public FavoriteService(AppDbConection context, IUserService userService, IProductService productService)
         {
             _context = context;
-            _userServise = userServise;
-            _productServises = productServises;
+            _userService = userService;
+            _productService = productService;
         }
 
         public async Task AddToFavoritesAsync(AddFavoritModel model , string userId)//готово
         {
             _logger.Info($"{nameof(AddToFavoritesAsync)}: Виклик методу");
           
-            var user = await _userServise.GetUserOrThrowAsyncId(userId);
+            var user = await _userService.GetUserOrThrowAsyncId(userId);
 
-            var product = await _productServises.GetProductOrThrowIdAsync(model.ProductId);
+            var product = await _productService.GetProductOrThrowIdAsync(model.ProductId);
 
             _logger.Info($"{nameof(AddToFavoritesAsync)}: Додавання товару з ID {product.Name} до обраного користувача з ID {user.UserName}");
             bool alreadyExists = await _context.favoritProducts.AnyAsync(fp => fp.UserId == userId && fp.ProductId == model.ProductId);
@@ -54,7 +53,7 @@ namespace MyShopProjectBackend.Services.Implementation
         public async Task<List<FavouriteProduct>> GetFavoritesAsync(string userId)//готово
         {
             _logger.Info($"{nameof(GetFavoritesAsync)}: Виклик методу");
-            var user = await _userServise.GetUserOrThrowAsyncId(userId);
+            var user = await _userService.GetUserOrThrowAsyncId(userId);
 
             _logger.Info($"{nameof(GetFavoritesAsync)}: Отримання улюблених товарів для користувача з ID {user.UserName}");
 
@@ -75,9 +74,9 @@ namespace MyShopProjectBackend.Services.Implementation
         public async Task RemoveFromFavoritesAsync(int productId, string userId)//готово
         {
             _logger.Info($"{nameof(RemoveFromFavoritesAsync)}: Виклик методу");
-            var user = await _userServise.GetUserOrThrowAsyncId(userId);
+            var user = await _userService.GetUserOrThrowAsyncId(userId);
 
-            var product = await _productServises.GetProductOrThrowIdAsync(productId);
+            var product = await _productService.GetProductOrThrowIdAsync(productId);
             _logger.Info($"{nameof(RemoveFromFavoritesAsync)}: Видалення товару з ID {product.Name} з обраного користувача з ID {user.UserName}");
 
             var favoritProduct = await _context.favoritProducts

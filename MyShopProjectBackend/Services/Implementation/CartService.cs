@@ -15,25 +15,24 @@ namespace MyShopProjectBackend.Services.Implementation
     {
         private readonly AppDbConection _context;
         private readonly ILogger _logger = LogManager.GetCurrentClassLogger();
-        private readonly IUserService _userServise;
-        private readonly IProductService _productServises;
+        private readonly IUserService _userService;
+        private readonly IProductService _productService;
 
 
-        public CartService(AppDbConection context, IUserService userServise, IProductService productServises)
+        public CartService(AppDbConection context, IUserService userService, IProductService productService)
         {
             _context = context;
-            _userServise = userServise;
-            _productServises = productServises;
+            _userService = userService;
+            _productService = productService;
         }
 
         public async Task AddToCartAsync(AddToCartModel model, string userId)//готово
         {
             _logger.Info($"{nameof(AddToCartAsync)}: Виклик методу");
           
-            //var user = await _cartServisesHelper.UserServise.GetUserOrThrowAsyncId(userId);
-            var user = await _userServise.GetUserOrThrowAsyncId(userId);
+            var user = await _userService.GetUserOrThrowAsyncId(userId);
 
-            var product = await _productServises.GetProductOrThrowIdAsync(model.ProductId);
+            var product = await _productService.GetProductOrThrowIdAsync(model.ProductId);
           
             _logger.Info($"{nameof(AddToCartAsync)}: Додавання товару {product.Name} (к-ть {model.Quantity}) користувачу {user.UserName}");
             if (model.Quantity <= 0)
@@ -82,7 +81,7 @@ namespace MyShopProjectBackend.Services.Implementation
             _logger.Info($"{nameof(CheckoutAsync)}: Виклик методу");
 
 
-            var user = await _userServise.GetUserOrThrowAsyncId(userId);
+            var user = await _userService.GetUserOrThrowAsyncId(userId);
 
             _logger.Info($"{nameof(CheckoutAsync)}: Оформлення замовлення для користувача {user.UserName}");
             var cart = await _context.carts
@@ -141,7 +140,7 @@ namespace MyShopProjectBackend.Services.Implementation
         {
             _logger.Info($"{nameof(ClearCartAsync)}: Виклик методу");
 
-            var user = await _userServise.GetUserOrThrowAsyncId(userId);
+            var user = await _userService.GetUserOrThrowAsyncId(userId);
 
             var cart = await _context.carts.Include(c => c.Items).FirstOrDefaultAsync(c => c.UserId == userId);
             if (cart == null)
@@ -160,7 +159,7 @@ namespace MyShopProjectBackend.Services.Implementation
         {
             _logger.Info($"{nameof(GetCartAsync)}: Виклик методу");
 
-            var user = await _userServise.GetUserOrThrowAsyncId(userId);
+            var user = await _userService.GetUserOrThrowAsyncId(userId);
             _logger.Info($"{nameof(GetCartAsync)}: Отримання кошика користувача {user.UserName}");
             var cart = await _context.carts.SingleOrDefaultAsync(c => c.UserId == userId);
             if (cart == null)
@@ -197,9 +196,9 @@ namespace MyShopProjectBackend.Services.Implementation
         {
             _logger.Info($"{nameof(RemoveFromCartAsync)}: Виклик методу");
 
-            var user = await _userServise.GetUserOrThrowAsyncId(userId);
+            var user = await _userService.GetUserOrThrowAsyncId(userId);
 
-            var product = await _productServises.GetProductOrThrowIdAsync(productId);
+            var product = await _productService.GetProductOrThrowIdAsync(productId);
 
             _logger.Info($"{nameof(RemoveFromCartAsync)}: Видалення товару {product.Name} з кошика користувача {user.UserName}");
             var cart = await _context.carts.Include(c => c.Items).FirstOrDefaultAsync(c => c.UserId == userId);
@@ -227,9 +226,9 @@ namespace MyShopProjectBackend.Services.Implementation
         {
             _logger.Info($"{nameof(UpdateCartAsync)}: Виклик методу");
 
-            var user = await _userServise.GetUserOrThrowAsyncId(userId);
+            var user = await _userService.GetUserOrThrowAsyncId(userId);
 
-            var product = await _productServises.GetProductOrThrowIdAsync(model.ProductId);
+            var product = await _productService.GetProductOrThrowIdAsync(model.ProductId);
 
             _logger.Info($"{nameof(UpdateCartAsync)}: Оновлення товару {product.Name} в кошику користувача {user.UserName}");
             if (product.Quantity < model.Quantity)
