@@ -52,7 +52,7 @@ namespace MyShopProjectBackend.Controllers
         }
 
         [Authorize(Roles = "Seller")]
-        [HttpGet("orders")]
+        [HttpGet("orders-by-shop")]
         public async Task<IActionResult> GetAllOrders(int shopId)
         {
           var result = await _orderService.GetAllOrdersAsync(shopId, User.GetUserId()); 
