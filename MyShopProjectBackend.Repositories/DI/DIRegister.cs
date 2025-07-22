@@ -10,6 +10,12 @@ namespace MyShopProjectBackend.Repositories.DI
         public static void ConfigureRepositoriesDI(this IServiceCollection services, IConfiguration configuration) 
         {
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IFavoriteRepository, FavoriteRepository>();
+            services.AddScoped<IOrderRepository, OrderRepository>();
+            services.AddScoped<IProductRepository, ProductRepository>();
+            services.AddScoped<IReviewRepository, ReviewRepository>();
+            services.AddScoped<ICartRepository, CartRepository>();
+            services.AddScoped<IShopRepository, ShopRepository>();
         }
     }
 }

@@ -6,8 +6,8 @@ namespace MyShopProjectBackend.Servises.Interface
 {
     public interface IOrderService
     {
-        public Task<List<OrderDto>> GetOrdersForUserAsync(string buyerId, string buyerName);
-        public Task<OrderDto?> GetOrderByIdAsync(int orderId, string sellerId);
+        public Task<List<OrderDto>> GetOrdersForUserAsync(string buyerId, string buyerName);//
+        public Task<OrderDto?> GetOrderByIdAsync(int orderId, string sellerId);//
         public Task UpdateOrderStatusAsync(UpdateOrderModel model, string sellerId);
         public Task CreateOrderAsync(string userId, List<OrderItemDto> orderItems);
         public Task DeleteOrderAsync(int orderId, string sellerId);
