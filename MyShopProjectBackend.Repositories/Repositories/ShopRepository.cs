@@ -40,5 +40,9 @@ namespace MyShopProjectBackend.Repositories.Repositories
             _context.Shops.Update(shop);
             await _context.SaveChangesAsync();
         }
+         public async Task<Shop> GetByNameAsync(string ShopName)
+        {
+            return await _context.Shops.FirstOrDefaultAsync(s=> s.Name == ShopName);
+        }
     }
 }

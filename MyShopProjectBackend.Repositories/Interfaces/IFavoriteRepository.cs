@@ -7,6 +7,6 @@ namespace MyShopProjectBackend.Repositories.Interfaces
         Task AddToFavoritesAsync(FavouriteProduct favorite);
         Task RemoveFromFavoritesAsync(FavouriteProduct product);
         Task<List<FavouriteProduct>> GetFavoritesAsync(ApplicationUser user);
-
+        Task<FavouriteProduct> GetFavoriteByProductIdAsync(int productId, ApplicationUser user);
     }
 }

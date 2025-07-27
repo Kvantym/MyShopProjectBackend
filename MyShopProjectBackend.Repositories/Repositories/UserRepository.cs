@@ -33,35 +33,35 @@ namespace MyShopProjectBackend.Repositories.Repositories
             return users;
         }
 
-        public Task<ApplicationUser> GetUserByIdAsync(string userId)
+        public async Task<ApplicationUser> GetUserByIdAsync(string userId)
         {
-            var user = _userManager.FindByIdAsync(userId);
+            var user = await _userManager.FindByIdAsync(userId);
             return user;
         }
 
-        public Task<ApplicationUser> GetUserByNameAsync(GetUserByNameRequest request)
+        public async Task<ApplicationUser> GetUserByNameAsync(string userName)
         {
-            var user = _userManager.FindByNameAsync(request.Username);
+            var user = await _userManager.FindByNameAsync(userName);
             return user;
         }
 
-        public Task<List<ApplicationUser>> GetUsersByIdsAsync(List<string> userIds)
+        public async Task<List<ApplicationUser>> GetUsersByIdsAsync(List<string> userIds)
         {
-           var users = _userManager.Users.Where(u => userIds.Contains(u.Id)).ToListAsync();
+           var users = await _userManager.Users.Where(u => userIds.Contains(u.Id)).ToListAsync();
            return users;
         }
 
-        public async Task UpdateUserAsync(UpdateUserRequest request)
+        public async Task UpdateUserAsync(ApplicationUser user)
         {
-            var user = await _userManager.FindByNameAsync(request.Username);
+            
+            var existingUser = await _userManager.FindByIdAsync(user.Id);
 
-            user.UserName = request.Username;
-            user.Email = request.Email;
+            existingUser.UserName = user.UserName;
+            existingUser.Email = user.Email;
 
-            await _userManager.UpdateAsync(user);
+            await _userManager.UpdateAsync(existingUser);
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-            await _userManager.ResetPasswordAsync(user, token, request.Password);
         }
     }
 }

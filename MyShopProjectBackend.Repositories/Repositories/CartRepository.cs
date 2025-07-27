@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MyShopProjectBackend.Domain.Entities;
+using MyShopProjectBackend.Domain.Responses;
 using MyShopProjectBackend.Infrastructure;
 using MyShopProjectBackend.Repositories.Interfaces;
 
@@ -31,9 +32,10 @@ namespace MyShopProjectBackend.Repositories.Repositories
             return await _context.Carts.Include(c => c.Items).ThenInclude(ci => ci.Product).FirstOrDefaultAsync(c => c.UserId == user.Id);
         }
 
-        public async Task RemoveCartItemAsync(CartItem product)
+        public async Task RemoveCartItemAsync(Cart cart, CartItem cartItem)
         {
-            _context.CartItems.Remove(product);
+            cart.Items.Remove(cartItem);
+            _context.CartItems.Remove(cartItem);
             await _context.SaveChangesAsync();
         }
 
@@ -49,5 +51,20 @@ namespace MyShopProjectBackend.Repositories.Repositories
            .Include(ci => ci.Cart)
            .FirstOrDefaultAsync(ci => ci.ProductId == product.Id && ci.Cart.UserId == user.Id);
         }
+       public  async Task<CartItem> GetCartItemAsync(Cart cart, int productId)
+        {
+           var cartItem = await _context.CartItems.Include(ci=> ci.Product).FirstOrDefaultAsync(ci => ci.CartId == cart.Id && ci.ProductId == productId);
+            return cartItem;
+        }
+
+      public async Task<List<CartItem>> GetCartItemsAsync(Cart cart)
+        {
+          var cartItems =await _context.CartItems
+                .Include(ci => ci.Product)
+                .Where(ci => ci.CartId == cart.Id)
+                .ToListAsync();
+            return cartItems;
+        }
+
     }
 }

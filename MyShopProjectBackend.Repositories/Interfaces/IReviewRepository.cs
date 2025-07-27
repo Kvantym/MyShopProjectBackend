@@ -11,5 +11,6 @@ namespace MyShopProjectBackend.Repositories.Interfaces
         Task<List<ProductReview>> GetReviewsByUserAsync(ApplicationUser user);
         Task<ProductReview?> GetReviewAsync(ProductReview review);
         Task<List<ProductReview>> GetAllReviewsAsync();
+        Task<ProductReview> GetReviewsByUserAndProductAsync(string userId, int productId);
     }
 }

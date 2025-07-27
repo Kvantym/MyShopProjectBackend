@@ -9,5 +9,6 @@ namespace MyShopProjectBackend.Repositories.Interfaces
         Task DeleteAsync(Shop shop);
         Task<List<Shop>> GetAllByOwnerAsync(ApplicationUser seller);
         Task<Shop?> GetByIdAsync(int shopId);
+        Task<Shop> GetByNameAsync(string ShopName);
     }
 }

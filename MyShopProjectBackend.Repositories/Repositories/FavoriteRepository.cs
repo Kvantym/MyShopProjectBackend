@@ -31,5 +31,10 @@ namespace MyShopProjectBackend.Repositories.Repositories
              _context.FavoritProducts.Remove(product);
              await _context.SaveChangesAsync();
         }
+       public async Task<FavouriteProduct> GetFavoriteByProductIdAsync(int productId, ApplicationUser user)
+        {
+            return await _context.FavoritProducts
+                .FirstOrDefaultAsync(fp => fp.ProductId == productId && fp.UserId == user.Id);
+        }
     }
 }

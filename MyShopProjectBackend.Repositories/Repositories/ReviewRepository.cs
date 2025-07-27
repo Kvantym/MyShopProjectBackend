@@ -36,18 +36,22 @@ namespace MyShopProjectBackend.Repositories.Repositories
 
         public async Task<List<ProductReview>> GetReviewsByProductAsync(Product product)
         {
-            return await _context.ProductReviews.Where(r => r.Product.Id == product.Id).Include(r => r.User).ToListAsync();
+            return await _context.ProductReviews.Where(r => r.ProductId == product.Id).Include(r => r.User).ToListAsync();
         }
 
         public async Task<List<ProductReview>> GetReviewsByUserAsync(ApplicationUser user)
         {
-          return await _context.ProductReviews.Where(r=> r.User.Id == user.Id).Include(r=> r.Product).ToListAsync();
+          return await _context.ProductReviews.Where(r=> r.UserId == user.Id).Include(r=> r.Product).ToListAsync();
         }
 
         public async Task UpdateReviewAsync(ProductReview review)
         {
             _context.ProductReviews.Update(review);
             await _context.SaveChangesAsync();
+        }
+        public async Task<ProductReview> GetReviewsByUserAndProductAsync(string userId, int productId)
+        {
+            return await _context.ProductReviews.Where(r => r.UserId == userId && r.ProductId == productId).FirstOrDefaultAsync();
         }
     }
 }

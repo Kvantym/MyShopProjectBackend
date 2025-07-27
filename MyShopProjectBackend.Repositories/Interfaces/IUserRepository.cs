@@ -6,8 +6,8 @@ namespace MyShopProjectBackend.Repositories.Interfaces
 {
     public interface IUserRepository
     {
-        public Task<ApplicationUser> GetUserByNameAsync(GetUserByNameRequest request);
-        public Task UpdateUserAsync(UpdateUserRequest request);
+        public Task<ApplicationUser> GetUserByNameAsync(string userName);
+        public Task UpdateUserAsync(ApplicationUser user);
         public Task<List<UserResponse>> GetAllAsync();
         public Task DeleteUserAsync(string userId);
         public Task<ApplicationUser> GetUserByIdAsync(string userId);

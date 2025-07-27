@@ -39,9 +39,9 @@ namespace MyShopProjectBackend.Repositories.Repositories
                 .Where(p => p.Shop.Id == shop.Id)
                 .ToListAsync();
         }
-        public async Task<Product> GetProductAsync(Product product)
+        public async Task<Product> GetProductAsync(int productId)
         {
-            return await _context.Products.FindAsync(product.Id);
+            return await _context.Products.FindAsync(productId);
         }
         public async Task<List<Product>> GetProductsAsync()
         {
@@ -52,6 +52,10 @@ namespace MyShopProjectBackend.Repositories.Repositories
             return await _context.Products
                 .Where(p => p.Name.Contains(name, StringComparison.OrdinalIgnoreCase))
                 .ToListAsync();
+        }
+       public async Task<Product> GetProductByNameAsync(string productName, Shop shop)
+        {
+            return await _context.Products.FirstOrDefaultAsync(p => p.Name == productName && p.ShopId == shop.Id);
         }
     }
 }
