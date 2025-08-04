@@ -12,7 +12,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MyShopProjectBackend.Infrastructure\MyShopProjectBackend.Infrastructure.csproj" />
-    <ProjectReference Include="..\MyShopProjectBackend.Application\MyShopProjectBackend.Application.csproj" />
   </ItemGroup>
 
 </Project>
